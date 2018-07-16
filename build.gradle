@@ -1,0 +1,30 @@
+buildscript {
+    apply from: 'versions.gradle'
+    addRepos(repositories)
+    dependencies {
+        classpath deps.android_gradle_plugin
+        classpath deps.kotlin.plugin
+    }
+}
+//workaround for bug in kotlin 1.240
+//@todo look for update 4.26
+//https://github.com/Takhion/kotlin-metadata/issues/8
+subprojects {
+    configurations.all {
+        resolutionStrategy {
+            eachDependency {
+                if (requested.name == "kotlin-compiler-embeddable") {
+                    useVersion("1.2.30")
+                }
+            }
+        }
+    }
+}
+
+allprojects {
+    addRepos(repositories)
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
