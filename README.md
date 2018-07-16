@@ -1,7 +1,7 @@
 # edo
 
 #
-CH API for Architecture optimizations in image downloads and paging
+Architecture optimizations in image downloads and paging
 
 ## with duplicate detection at preload
 
