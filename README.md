@@ -4,6 +4,7 @@
 Architecture optimizations in image downloads and paging
 
 ## with duplicate detection at preload
+preloaddetector library under construction in experimental phase
 
 
 ## Edo v1   (POC demo portfolio app)
