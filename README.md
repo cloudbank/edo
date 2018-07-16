@@ -9,7 +9,7 @@ CH API for Architecture optimizations in image downloads and paging
 ## Edo v1   (POC demo portfolio app)
 >>>>
 
-<img src="https://i.imgur.com/Hfuc0Ss.png" height="300"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+<img src="https://i.imgur.com/Hfuc0Ss.png" height="350"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
 >>>>Target 27
 >>>>SDK 14+, Oreo compatible, for phone and tablet
 
@@ -25,7 +25,7 @@ CH API for Architecture optimizations in image downloads and paging
 
 >>>>VIEW   
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://i.imgur.com/Hfuc0Ss.png" height="300"/>
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://i.imgur.com/Hfuc0Ss.png" height="350"/>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 
 ### Designed with the Material theme and latest, greatest android libs for best viewing pleasure!
