@@ -22,7 +22,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import com.bumptech.glide.load.DecodeFormat
 import com.droidteahouse.edo.GlideRequests
 import com.droidteahouse.edo.R
 import com.droidteahouse.edo.vo.ArtObject
@@ -57,7 +56,7 @@ class ArtObjectViewHolder(view: View, private val glide: GlideRequests)
         // date.text = art?.date ?: "[no date listed]"
         id.text = "No." + art?.id
         glide.load(art?.url)
-                .format(DecodeFormat.PREFER_ARGB_8888).centerCrop()
+                .centerCrop()
                 .placeholder(R.drawable.ic_insert_photo_black_48dp)
                 .into(thumbnail)
     }

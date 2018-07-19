@@ -64,7 +64,7 @@ class ArtBoundaryCallback @Inject constructor(
   override fun onZeroItemsLoaded() {
     helper.runIfNotRunning(PagingRequestHelper.RequestType.INITIAL) {
       webservice.japaneseDesign(
-          page = "0")
+              page = "1")
           //per_page = networkPageSize)
           .enqueue(createWebserviceCallback(it))
     }

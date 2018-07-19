@@ -90,14 +90,15 @@ class ArtObjectRepository @Inject constructor(
                 var items =filtered.map { item ->
                     item.page = nextPage
                     item.url += "?height=100&width=100"
-                    item.hash = item.id  //init before hash
+                    item.hash = item.id //init before hash
                     item
                 }.toMutableList()
+                //@todo fic
                 if (nextPage-1 == 0 ) {
                     var cloneItem = items.get(0)
-                    cloneItem.id =  142999
+                    cloneItem.id = 142427
                     cloneItem.hash= cloneItem.id
-                    items.add(1,cloneItem)
+                    items.add(0, cloneItem)
                 }
                 Log.d("REPO", "items insert starting" + items.size + ";;" + nextPage.minus(1))
                 //@todo when insert it calls onchange--need to protect from extra calls to network?

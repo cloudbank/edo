@@ -32,12 +32,12 @@ import android.support.v7.widget.LinearLayoutManager
 import android.util.Log
 import android.view.View
 import com.bumptech.glide.RequestBuilder
-import com.bumptech.glide.load.DecodeFormat
 import com.droidteahouse.edo.*
 import com.droidteahouse.edo.repository.NetworkState
 import com.droidteahouse.edo.vo.ArtObject
 import dagger.android.support.DaggerAppCompatActivity
 import kotlinx.android.synthetic.main.activity_art.*
+import java.io.FileNotFoundException
 import java.util.*
 import java.util.concurrent.Executor
 import javax.inject.Inject
@@ -62,8 +62,11 @@ class ArtActivity : DaggerAppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_art)
         createViews()
+        rvArt?.smoothScrollToPosition(4)
+        rvArt?.smoothScrollToPosition(0)
         initSwipeToRefresh()
         //wave hands while we look for duplicates
+
 
         //initSearch()
     }
@@ -82,7 +85,7 @@ class ArtActivity : DaggerAppCompatActivity() {
         rvArt.adapter = adapter
         configRV()
         val modelProvider = ArtActivity.MyPreloadModelProvider(this, artViewModel, ioExecutor)
-        val sizeProvider = FixedPreloadSizeProvider<ArtObject>(100, 100)//@todo seems better than async cb????
+        val sizeProvider = FixedPreloadSizeProvider<ArtObject>(75, 75)//@todo seems better than async cb????
         val preloader = RecyclerViewPreloader(
                 glide, modelProvider, sizeProvider, 10)
         rvArt?.addOnScrollListener(preloader)
@@ -91,12 +94,11 @@ class ArtActivity : DaggerAppCompatActivity() {
             //do we need to have these here or can we get away without to debug
             modelProvider.objects = it?.toMutableList()
             adapter.submitList(it)
+
+
             // }
         })
         //check top of page 1 as well, and check pages  1 w add
-        //progress overlay for each new page? or just page 0
-        rvArt?.smoothScrollToPosition(10)
-        rvArt?.smoothScrollToPosition(0)
 
         artViewModel.networkState.observe(this, Observer
         {
@@ -117,6 +119,7 @@ class ArtActivity : DaggerAppCompatActivity() {
         val itemDecor = DividerItemDecoration(this, DividerItemDecoration.VERTICAL)
         itemDecor.setDrawable(ContextCompat.getDrawable(this, R.drawable.divider)!!)
         val addItemDecoration = rvArt?.addItemDecoration(itemDecor)
+
     }
 
     private fun initSwipeToRefresh() {
@@ -161,23 +164,35 @@ class ArtActivity : DaggerAppCompatActivity() {
             //can we bulk update
             //@todo try with first 3 images
             ioExecutor.execute {
+                val start = System.nanoTime()
                 android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
-                val bmd = requestBuilder.submit(9, 8).get() as BitmapDrawable
-                val b = bmd.bitmap
+                //
+                var bmd: BitmapDrawable
+                //can I guarantee it is in the cache
+                try {
+                    bmd = requestBuilder.load(item.url).submit(9, 8).get() as BitmapDrawable
+                    //val bmd = requestBuilder.submit(9, 8).get() as BitmapDrawable
+                } catch (e: FileNotFoundException) {
+                    bmd = requestBuilder.submit(9, 8).get() as BitmapDrawable
+
+                }
+                //delete the entry since it cannot be found
+                // }
                 val pix = IntArray(72)
+                val b = bmd.bitmap
                 b.getPixels(pix, 0, 9, 0, 0, 9, 8)
                 val bmpGrayscale = Bitmap.createBitmap(9, 8, Bitmap.Config.ARGB_8888)
-                val c = Canvas(bmpGrayscale)
                 val paint = Paint()
                 val cm = ColorMatrix()
                 cm.setSaturation(0.0f)
                 val f = ColorMatrixColorFilter(cm)
                 paint.colorFilter = f
-                c.drawBitmap(b, 0.0f, 0.0f, paint)
+                Canvas(bmpGrayscale).drawBitmap(b, 0.0f, 0.0f, paint)
                 bmpGrayscale.getPixels(pix, 0, 9, 0, 0, 9, 8)
-                item.hash = dhash(pix)
+                //gray scale pixels, as signed ints, 2^8=256 possible tones of gray for each channel
+                item.hash = dhash1(pix)
                 //this is the first chance to get the cached image but also, happens with scroll
-                Log.d("MyPreloadModelProvider", "hashImages" + item.id + " :: " + dhash(pix))
+                Log.d("MyPreloadModelProvider", "hashImages" + item.id + " :: " + dhash1(pix))
                 try {
                     artViewModel.update(item)
                     //new table for hashes and ids
@@ -188,6 +203,7 @@ class ArtActivity : DaggerAppCompatActivity() {
                     //datasource updates the pagedlist in time for now
                     artViewModel.delete(item)
                 }
+                Log.d("MyPreloadModelProvider", "Time::: " + (System.nanoTime() - start).toString())
             }
 
 
@@ -195,7 +211,7 @@ class ArtActivity : DaggerAppCompatActivity() {
         //does a row hash only instead of row | col hash.  32 bits is plenty for 3K images not to collide
         //and it is faster for Android needs....will it give false positives
 
-        private fun dhash(pixels: IntArray): Int {
+        private fun dhash1(pixels: IntArray): Int {
             var width = 9
             var height = 8
             var hash = 0
@@ -218,26 +234,25 @@ class ArtActivity : DaggerAppCompatActivity() {
 
         override fun getPreloadRequestBuilder(art: ArtObject): GlideRequest<Drawable> {
             //Log.d("MyPreloadModelProvider", "getPreloadRequestBuilder")
-            return GlideApp.with(context).load(art?.url)
-                    .format(DecodeFormat.PREFER_ARGB_8888).centerCrop()
+            return GlideApp.with(context).load(art.url)
+                    .centerCrop()
 
 
         }
 
+        external fun dhash(array: IntArray): Int
 
-        external fun stringFromJNI(): String
-        external fun hashFromJNI(): Int
 
         companion object {
 
             // Used to load the 'native-lib' library on application startup.
             init {
-                System.loadLibrary("native-lib")
+                //  System.loadLibrary("native-lib")
             }
 
 
         }
-
-
     }
+
+
 }

@@ -2,7 +2,6 @@ package com.droidteahouse.edo;
 
 
 import android.arch.lifecycle.ViewModel;
-import android.graphics.Bitmap;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.widget.AbsListView;
@@ -34,9 +33,7 @@ import java.util.concurrent.Executor;
  * @param <T> The type of the model being displayed in the list.
  */
 public class ListPreloaderHasher<T> implements AbsListView.OnScrollListener {
-  static {
-    System.loadLibrary("native-lib");
-  }
+
 
   private final int maxPreload;
   private final ListPreloaderHasher.PreloadTargetQueue preloadTargetQueue;
@@ -175,8 +172,8 @@ public class ListPreloaderHasher<T> implements AbsListView.OnScrollListener {
     });
     */
     //  Log.d("HASHER", "about to hash " + ((ArtObject) item).getId() +"::"+ ((ArtObject) item).getHash());
-    if (((ArtObject) item).getHash() == (Integer.valueOf(((ArtObject) item).getId()))) {
-      ((ArtObject) item).setHash(~((ArtObject) item).getHash());
+      if (((ArtObject) item).getHash() == ((ArtObject) item).getId()) {
+          //((ArtObject) item).setHash(-2);
       preloadModelProvider.hashImage(preloadRequestBuilder, (ArtObject) item);
       //is there an actual bitmap loaded here
     }
@@ -190,7 +187,6 @@ public class ListPreloaderHasher<T> implements AbsListView.OnScrollListener {
     }
   }
 
-  public native int hashFromJNI(Bitmap b);
 
   /**
    * An implementation of PreloadModelProvider should provide all the models that should be
