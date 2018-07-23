@@ -1,13 +1,10 @@
 package com.droidteahouse.edo;
 
 
-import android.app.Activity;
+import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
-import android.support.v4.app.Fragment;
-import android.support.v4.app.FragmentActivity;
 import android.support.v7.widget.RecyclerView;
 
-import com.bumptech.glide.Glide;
 import com.bumptech.glide.RequestManager;
 import com.bumptech.glide.integration.recyclerview.RecyclerToListViewScrollListener;
 import com.droidteahouse.edo.ListPreloaderHasher.PreloadModelProvider;
@@ -34,48 +31,8 @@ public final class RecyclerViewPreloader<T> extends RecyclerView.OnScrollListene
 
   private final RecyclerToListViewScrollListener recyclerScrollListener;
 
-  /**
-   * Helper constructor that accepts an {@link Activity}.
-   */
-  public RecyclerViewPreloader(@NonNull Activity activity,
-                               @NonNull PreloadModelProvider<T> preloadModelProvider,
-                               @NonNull PreloadSizeProvider<T> preloadDimensionProvider, int maxPreload) {
-    this(Glide.with(activity), preloadModelProvider, preloadDimensionProvider, maxPreload);
-  }
 
-  /**
-   * Helper constructor that accepts an {@link FragmentActivity}.
-   */
-  public RecyclerViewPreloader(@NonNull FragmentActivity fragmentActivity,
-                               @NonNull PreloadModelProvider<T> preloadModelProvider,
-                               @NonNull PreloadSizeProvider<T> preloadDimensionProvider,
-                               int maxPreload) {
-    this(Glide.with(fragmentActivity), preloadModelProvider, preloadDimensionProvider, maxPreload);
-  }
 
-  /**
-   * Helper constructor that accepts an {@link Fragment}.
-   */
-  public RecyclerViewPreloader(@NonNull Fragment fragment,
-                               @NonNull PreloadModelProvider<T> preloadModelProvider,
-                               @NonNull PreloadSizeProvider<T> preloadDimensionProvider,
-                               int maxPreload) {
-    this(Glide.with(fragment), preloadModelProvider, preloadDimensionProvider, maxPreload);
-  }
-
-  /**
-   * Helper constructor that accepts an {@link android.app.Fragment}.
-   *
-   * @deprecated Use constructor <code>RecyclerViewPreloader(Fragment, PreloadModelProvider<T>,
-   * PreloadSizeProvider<T>)</code> instead.
-   */
-  @Deprecated
-  public RecyclerViewPreloader(@NonNull android.app.Fragment fragment,
-                               @NonNull PreloadModelProvider<T> preloadModelProvider,
-                               @NonNull PreloadSizeProvider<T> preloadDimensionProvider,
-                               int maxPreload) {
-    this(Glide.with(fragment), preloadModelProvider, preloadDimensionProvider, maxPreload);
-  }
 
   /**
    * Constructor that accepts interfaces for providing the dimensions of images to preload, the list
@@ -85,12 +42,13 @@ public final class RecyclerViewPreloader<T> extends RecyclerView.OnScrollListene
    * @param preloadDimensionProvider Provides the dimensions of images to load.
    * @param maxPreload               Maximum number of items to preload.
    */
+
   public RecyclerViewPreloader(@NonNull RequestManager requestManager,
                                @NonNull PreloadModelProvider<T> preloadModelProvider,
-                               @NonNull PreloadSizeProvider<T> preloadDimensionProvider, int maxPreload) {
+                               @NonNull PreloadSizeProvider<T> preloadDimensionProvider, int maxPreload, SharedPreferences sp) {
 
     ListPreloaderHasher<T> listPreloader = new ListPreloaderHasher<>(requestManager, preloadModelProvider,
-        preloadDimensionProvider, maxPreload);
+            preloadDimensionProvider, maxPreload, sp);
     recyclerScrollListener = new RecyclerToListViewScrollListener(listPreloader);
   }
 

@@ -28,7 +28,9 @@ import dagger.Reusable
 import okhttp3.OkHttpClient
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
-import java.util.concurrent.*
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
+import javax.inject.Named
 import javax.inject.Singleton
 
 
@@ -44,10 +46,17 @@ class AppModule {
 
   @Provides
   @Singleton
-  internal fun provideSharedPreferences(context: Context): SharedPreferences {
-    return context.getSharedPreferences("ArtPrefs", Context.MODE_PRIVATE)
+  @Named("hashes")
+  internal fun provideSharedHashPreferences(context: Context): SharedPreferences {
+    return context.getSharedPreferences("hashes", Context.MODE_PRIVATE)
   }
 
+  @Provides
+  @Singleton
+  @Named("ids")
+  internal fun provideSharedIdPreferences(context: Context): SharedPreferences {
+    return context.getSharedPreferences("ids", Context.MODE_PRIVATE)
+  }
 
   @Reusable
   @Provides
@@ -75,33 +84,19 @@ class AppModule {
 
   //https://stackoverflow.com/questions/16316890/when-to-shutdown-executorservice-in-android-application
   @Provides
-  @Singleton  //@todo change to reuseable?
-  internal fun provideIOExecutor(): Executor {
+  @Reusable
+  @Named("repoExec")
+  internal fun provideRepoIOExecutor(): ExecutorService {
     return Executors.newCachedThreadPool()
   }
 
   @Provides
   @Reusable
-  internal fun provideThreadPoolExecutor(): ThreadPoolExecutor {
-    val NUMBER_OF_CORES = Runtime.getRuntime().availableProcessors()
-
-
-    return ThreadPoolExecutor(
-        NUMBER_OF_CORES * 2,
-        NUMBER_OF_CORES * 2,
-        90L,
-        TimeUnit.SECONDS,
-        LinkedBlockingQueue<Runnable>(),
-        SimpleThreadFactory()
-    )
+  @Named("hashExec")
+  internal fun provideHashIOExecutor(): ExecutorService {
+    return Executors.newCachedThreadPool()
   }
 
-  class SimpleThreadFactory : ThreadFactory {
-    override fun newThread(r: Runnable): Thread {
-      return (Thread(r))
-
-    }
-  }
 
 
   @Provides
@@ -109,6 +104,7 @@ class AppModule {
   internal fun provideDao(db: ArtDb): ArtDao {
     return db.artDao()
   }
+
 
 }
 

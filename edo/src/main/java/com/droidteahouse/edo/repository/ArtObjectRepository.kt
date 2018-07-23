@@ -75,7 +75,7 @@ class ArtObjectRepository @Inject constructor(
     }
 
     /**
-     * Inserts the response into the database while also assigning position indices to items.
+     * Inserts the response into the database while also assigning page to items.
      */
     fun insertResultIntoDb(list: List<ArtObject>) {
 
@@ -84,26 +84,25 @@ class ArtObjectRepository @Inject constructor(
             db.runInTransaction {
 
                 val nextPage = db.artDao().getNextPageInArt()
-
                 val filtered = results.filter { it.url.length > 0 }
 
-                var items =filtered.map { item ->
+                var items = filtered.map { item ->
                     item.page = nextPage
                     item.url += "?height=100&width=100"
-                    item.hash = item.id //init before hash
+                    //item.hash = item.id //init before hash
                     item
                 }.toMutableList()
-                //@todo fic
                 if (nextPage-1 == 0 ) {
                     var cloneItem = items.get(0)
                     cloneItem.id = 142427
-                    cloneItem.hash= cloneItem.id
                     items.add(0, cloneItem)
                 }
-                Log.d("REPO", "items insert starting" + items.size + ";;" + nextPage.minus(1))
+                Log.d("REPO", "items insert starting" + items.size + ";;" + nextPage)
                 //@todo when insert it calls onchange--need to protect from extra calls to network?
                 //Paging data source is getting next page?  check page
                 db.artDao().insert(items)
+                Log.d("REPO", "items insert done" + items.size + ";;" + nextPage)
+
             }
         }
     }

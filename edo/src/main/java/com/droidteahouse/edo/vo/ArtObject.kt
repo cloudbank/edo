@@ -1,11 +1,10 @@
 package com.droidteahouse.edo.vo
 
 import android.arch.persistence.room.Entity
-import android.arch.persistence.room.Index
 import android.arch.persistence.room.PrimaryKey
 import com.google.gson.annotations.SerializedName
 
-@Entity(tableName = "artObjects", indices = arrayOf(Index(value = "hash", unique = true)))
+@Entity(tableName = "artObjects") //indices = arrayOf(Index(value = "hash", unique = true)))
 data class ArtObject(
 
 
@@ -21,5 +20,5 @@ data class ArtObject(
         var page = 0
         //@todo add a deserializer
         //unique default
-        var hash: Int = 0
+    // var hash: Int = 0
 }

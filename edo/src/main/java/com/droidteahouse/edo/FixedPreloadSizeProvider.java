@@ -19,6 +19,7 @@ public class FixedPreloadSizeProvider<T> implements ListPreloaderHasher.PreloadS
    * @param width  The width of the preload size in pixels.
    * @param height The height of the preload size in pixels.
    */
+
   public FixedPreloadSizeProvider(int width, int height) {
     this.size = new int[]{width, height};
   }
