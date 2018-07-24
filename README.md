@@ -33,7 +33,7 @@ preloaddetector library under construction in experimental phase
 ### 
 
 
-### --> download from the [Google Play Store](https://play.google.com/store/apps/details?id=com.droidteahouse.artsy)
+### --> download from the [Google Play Store](https://play.google.com/store/apps/details?id=com.droidteahouse.edo)
 
 
 ## License
