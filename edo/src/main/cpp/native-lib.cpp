@@ -1,103 +1,48 @@
 #include <jni.h>
-#include <string>
-#include <android/bitmap.h>
-#include <boost/functional/hash.hpp>
 
 
-extern "C" JNIEXPORT jstring
+/**3 stepsisters algo
+ * scales the image using the fastest, simplest algorithm called "nearest neighbor, greyscales,
+ * and fingerprints all in one*/
+extern "C" JNIEXPORT jlong JNICALL
+Java_com_droidteahouse_edo_ui_ArtActivity_00024MyPreloadModelProvider_nativeDhash(
+        JNIEnv *env, jobject obj, jobject db, jint newWidth, jint newHeight, jint oldWidth,
+        jint oldHeight) {
 
-JNICALL
-Java_com_droidteahouse_edo_ui_ArtActivity_stringFromJNI(
-        JNIEnv *env,
-        jobject /* this */) {
-    std::string hello = "Hello from C++";
-    return env->NewStringUTF(hello.c_str());
-}
-
-extern "C" JNIEXPORT std::size_t
-JNICALL
-Java_com_droidteahouse_edo_ui_ArtActivity_hashFromJNI(
-        JNIEnv *env,
-        jobject /* this */) {
-
-    int arr[10] = {1, 2, 3, 4, 5, 6, 7, 8, 9, 0};
-
-    return boost::hash_range(arr, arr + 10);
-}
-
-
-/*
-extern "C" JNIEXPORT int
-JNICALL
-Java_com_droidteahouse_edo_ListPreloaderHasher_hashBitmap(JNIEnv *env, jobject obj, jarray pixels) {
-  AndroidBitmapInfo  info;
-  uint32_t          *pixels;
-  int                ret;
-
-  AndroidBitmap_getInfo(env, obj, &info);
-
-  if(info.format != ANDROID_BITMAP_FORMAT_RGBA_8888) {
-    __android_log_write(ANDROID_LOG_ERROR,"NATIVE","Bitmap format is not RGBA_8888!");
-    //return false;
-  }
-  if ((ret = AndroidBitmap_lockPixels(env, obj, reinterpret_cast<void **>(&pixels)) < 0)) {
-    __android_log_write(ANDROID_LOG_ERROR,"NATIVE", "AndroidBitmap_lockPixels() failed ! error=%d");
-  }
-  //AndroidBitmap_lockPixels(env, bitmap, reinterpret_cast<void **>(&pixels));
-  uint32_t* src = (uint32_t*) pixels;
-
-
-  std::size_t result = boost::hash_range(pixels,64 );
-// Now you can use the pixel array 'pixels', which is in RGBA format
-
-
-/*
- * https://stackoverflow.com/questions/5231599/is-there-any-way-to-pass-a-java-array-to-c-through-jni-without-making-a-copy-of
- *
- */ //DOUbkleBuffer
-/*
-
-  //AndroidBitmap_unlockPixels(env,bitmap);
-  return result;
-
-}
-*/
-extern "C" JNIEXPORT jint
-JNICALL
-Java_com_droidteahouse_edo_ui_ArtActivity_00024MyPreloadModelProvider_dhash(JNIEnv *env,
-                                                                            jobject /* this */,
-                                                                            jintArray pixels) {
-
-    // initializations, declarations, etc
-    jint *c_array;
-    jint i = 0;
-    jint hash = 0;
-
-    // get a pointer to the array
-    c_array = env->GetIntArrayElements(pixels, 0);
-    // do some exception checking
-    if (c_array == NULL) {
-        return -1; /* exception occurred */
-    }
-    //jsize len = env->GetArrayLength(arr);
-    // do stuff to the array
-    for (i = 0; i < 72; i++) {
-        if ((i + 1) % 9 == 0) {
-            // don't calculate the current end of row compared to the beginning of the next row
-            continue;
+    jint *iBuf = (jint *) env->GetDirectBufferAddress(db);
+    jint *newBitmapPixels = new jint[newWidth * newHeight];
+    jint x2, y2;
+    jint index = 0;
+    jlong hash = 0;
+    //buffer has been allocated for size already on java side
+    for (jint y = 0; y < newHeight; ++y) {
+        for (jint x = 0; x < newWidth; ++x) {
+            x2 = x * oldWidth / newWidth;
+            if (x2 < 0)
+                x2 = 0;
+            else if (x2 >= oldWidth)
+                x2 = oldWidth - 1;
+            y2 = y * oldHeight / newHeight;
+            if (y2 < 0)
+                y2 = 0;
+            else if (y2 >= oldHeight)
+                y2 = oldHeight - 1;
+            newBitmapPixels[index] = iBuf[((y2 * oldWidth) + x2)];
+            //same as : newBitmapPixels[(y * newWidth) + x] = previousData[(y2 * oldWidth) + x2];
+            if (index > 0) {
+                if ((index) % newWidth != 0) {
+                    jint pixel2 = newBitmapPixels[index];
+                    jint pixel = newBitmapPixels[index - 1];
+                    pixel2 = (pixel2 & 0xff) * 0.299 + ((pixel2 >> 8) & 0xff) * 0.587 +
+                             ((pixel2 >> 16) & 0xff) * 0.114;
+                    pixel = (pixel & 0xff) * 0.299 + ((pixel >> 8) & 0xff) * 0.587 +
+                            ((pixel >> 16) & 0xff) * 0.114;
+                    hash |= ((pixel) < (pixel2));
+                    hash <<= 1L;
+                }
+            }
+            index++;
         }
-        jint bit = (c_array[i] & 0xff) < (c_array[i + 1] & 0xff);
-        hash = hash << 1 | bit;
-
     }
-
-    // release the memory so java can have it again
-    env->ReleaseIntArrayElements(pixels, c_array, 0);
-
-    // return something, or not.. it's up to you
     return hash;
 }
-
-
-
-//https://developer.android.com/ndk/guides/stable_apis#jnigraphics

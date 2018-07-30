@@ -1,16 +1,23 @@
 # edo
-
+<img src="https://i.imgur.com/haEZ4TX.png" height="350"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 #
-Architecture optimizations in image downloads and paging
+A demo backend focused app for eliminating duplicate images with Dagger2, Architecture including MVVM, Paging, LiveData, Room, Paging, and a custom dupe detector integrated with the Glide recyclerview preloader written in Kotlin.
+It uses a modified dhash fingerprint without hamming distance to catch exact image duplicates.
+Future releases may include a check for similar images within that epsilon.
+The heart of the research is in using off heap and garbage free structures as well, tempting ART and Dalvik's GC and memory bounds and optimizing native invocation.
 
 ## with duplicate detection at preload
-preloaddetector library under construction in experimental phase
+Preload image duplicate detector library under construction in experimental phase.
+It currently uses SP to cache fingerprints and ids.  I am working on a garbage free solution and native 
+optimizations.
 
 
 ## Edo v1   (POC demo portfolio app)
 >>>>
 
 <img src="https://i.imgur.com/Hfuc0Ss.png" height="350"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+<img src="https://i.imgur.com/mNojGLb.png" height="350"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+
 >>>>Target 27
 >>>>SDK 14+, Oreo compatible, for phone and tablet
 
