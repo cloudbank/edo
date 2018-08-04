@@ -22,7 +22,6 @@ import android.arch.lifecycle.ViewModelProviders
 import android.arch.paging.PagedList
 import android.content.Context
 import android.content.SharedPreferences
-import android.graphics.*
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
@@ -34,9 +33,13 @@ import android.view.View
 import com.bumptech.glide.RequestBuilder
 import com.droidteahouse.edo.*
 import com.droidteahouse.edo.repository.NetworkState
+import com.droidteahouse.edo.util.Util
 import com.droidteahouse.edo.vo.ArtObject
 import dagger.android.support.DaggerAppCompatActivity
 import kotlinx.android.synthetic.main.activity_art.*
+import java.nio.Buffer
+import java.nio.ByteBuffer
+import java.nio.ByteOrder
 import java.util.*
 import java.util.concurrent.ExecutorService
 import javax.inject.Inject
@@ -90,11 +93,12 @@ class ArtActivity : DaggerAppCompatActivity() {
 
         // val modelProvider = ArtActivity.MyPreloadModelProvider(this, artViewModel, executor, sp)
         var preloader = RecyclerViewPreloader(
-                glide, modelProvider, FixedPreloadSizeProvider(75, 75), 10, spIds)
+                glide, modelProvider, FixedPreloadSizeProvider(65, 65), 10, spIds)
         rvArt?.addOnScrollListener(preloader)
         artViewModel.artObjects.observe(this, Observer<PagedList<ArtObject>> {
             // if (it?.size!! > 0) {  //into STARTED w out data  bugfix idea for STARTED && list.size > 0
             //do we need to have these here or can we get away without to debug
+            //@todo
             if ((it?.size?.compareTo(0)!! > 0) and (it.size.compareTo(10) == 0) && !hashVisible) {
                 hashVisible = true
                 modelProvider.hashVisible(it.subList(0, 3), spIds)
@@ -152,6 +156,9 @@ class ArtActivity : DaggerAppCompatActivity() {
         var objects: MutableList<ArtObject>? = mutableListOf()
         //2 level cache  vs db vs SP
 
+        //queue of bytebuffers
+
+
         //before onscroll
         fun hashVisible(sublist: List<ArtObject>, spIds: SharedPreferences): Unit {
             //has the first 3
@@ -169,7 +176,7 @@ class ArtActivity : DaggerAppCompatActivity() {
 
 
         override fun getPreloadItems(position: Int): MutableList<ArtObject> {
-            Log.d("MyPreloadModelProvider", "getPreloadItems" + objects?.size)
+            // Log.d("MyPreloadModelProvider", "getPreloadItems" + objects?.size)
             //hashAndPreload(objects)
             //need to get a range that works
             if (objects?.isEmpty()!! || position >= objects?.size!!) {
@@ -192,20 +199,35 @@ class ArtActivity : DaggerAppCompatActivity() {
                 android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
                 //
                 lateinit var bmd: BitmapDrawable
-                //can I guarantee it is in the cache
-
+                //can I guarantee it is in the c ache
+                Log.d("MyPreloadModelProvider", "url:  " + item.url)
                 try {
-                    bmd = requestBuilder.submit(9, 8).get() as BitmapDrawable
+                    //@todo do we need weakref here for target see RequestTracker
+                    bmd = requestBuilder.submit().get() as BitmapDrawable
                 } catch (e: Exception) {
                     //@todo get timeout down
                     // java.net.SocketTimeoutException(timeout)
-                    Log.e("MyPreloadModelProvider", "exception" + e + item.id)
-                    artViewModel.delete(item)
+                    Log.e("MyPreloadModelProvider", "exception" + e + item.id + ":::" + item.url)
+                    // artViewModel.delete(item)
                     return@execute
 
                 }
                 val b = bmd.bitmap
-                val bmpGrayscale = Bitmap.createBitmap(9, 8, Bitmap.Config.ARGB_8888)
+                //directbuffer of the bitmap here with native endianess
+                //@todo try native all in one
+                val bb = ByteBuffer.allocateDirect((b.width * b.height) * 4)
+                bb.order(ByteOrder.nativeOrder())
+
+                b.copyPixelsToBuffer(bb)
+                bb.rewind()
+                val ib = bb.asIntBuffer()
+                //   Log.d("MyPreloadModelProvider", "buffer ::" + ib.capacity() +":::"+ ib.isDirect + ":::" +ib.order() + "::"+b.width*b.height )
+                //if (bb.capacity() == 0 )
+                //Preallocate a static pool of direct ByteBuffers at startup,
+                //@todo clear the buffer and the ref and int [] in c++, kotlin, and start looking at bit count
+                var hash = nativeDhash(ib, 9, 8, b.width, b.height)  //getIntField jni
+/*
+                val bmpGrayscale = Biutmap.createBitmap(9, 8, Bitmap.Config.ARGB_8888)
                 val paint = Paint()
                 val cm = ColorMatrix()
                 cm.setSaturation(0.0f)
@@ -223,14 +245,15 @@ class ArtActivity : DaggerAppCompatActivity() {
                 //bmpGrayscale.copyPixelsToBuffer(dbb)
                 // Log.d("MyPreloadModelProvider", "direct: " + dbb.isDirect)
                 val hash = dhash1(pix)
+                */
                 //SharedMemory.unmap(dbb)
 //@todo  threads don't just die in android
                 //clean(dbb)
-                Log.d("MyPreloadModelProvider", "hash" + item.id + " :: " + hash.toString())
+                Log.d("MyPreloadModelProvider", "hash" + item.id + " :: " + hash.toString() + ":::" + Util.bitCount(hash))
 
                 if (sp.contains(hash.toString())) {
                     artViewModel.delete(item)
-                    Log.d("MyPreloadModelProvider", "****duplicate" + item.id + " :: " + hash)
+                    Log.d("MyPreloadModelProvider", "****duplicate" + item.id + " :: " + hash.toString())
                 } else {
                     sp.edit().putString(hash.toString(), "1").commit()
                 }
@@ -255,72 +278,68 @@ class ArtActivity : DaggerAppCompatActivity() {
         }
 
 /*
-        // 01 12 23 34 45 56 67 78 89 1011 1213 1415    1617 1819 2021 2223    24-31    32-39 40-47   48-55  56-633
-        //skip 2 save 2 skip two save two compare
-        private fun dhash(bb: ByteBuffer): Long {
-            var hash: Long = 0
-            bb.rewind()
-            val ib = bb.asIntBuffer()
-            //ib.flip()
-            //72
-            //also could get into byte[] 0-71
-            while (ib.hasRemaining()) {
-                val i = ib.position()
-
-                if ((i + 1) % 9 == 0) {
-                    continue;
-                }
-
-                var bit = (ib.get(i).compareTo(ib.get(i + 1))).compareToInt()
-                hash = hash shl 1 or bit
-            }
-
-            return hash
+        fun clean( bb: ByteBuffer): Unit
+        {
+            if (bb == null) return;
+            java.lang.ref.Cleaner in j9 cleaner =((DirectBuffer) bb).cleaner();
+            if (cleaner != null) cleaner.clean();
         }
+*/
+        /*
+        fun dhash( newWidth:Int,  newHeight: Int): Long {
 
+            val newBitmapPixels = IntArray[newWidth * newHeight]
+            val x2, y2
+            val index = 0
+            val hash: Long = 0
+            //buffer has been allocated for size already on java side
+            for (y in 0 until newHeight) {
+                for (x in 0 until newWidth) {
+                    x2 = x * oldWidth / newWidth;
+                    if (x2 < 0)
+                        x2 = 0;
+                    else if (x2 >= oldWidth)
+                        x2 = oldWidth - 1;
+                    y2 = y * oldHeight / newHeight;
+                    if (y2 < 0)
+                        y2 = 0;
+                    else if (y2 >= oldHeight)
+                        y2 = oldHeight - 1;
+                    newBitmapPixels[index] = iBuf[((y2 * oldWidth) + x2)];
+                    //same as : newBitmapPixels[(y * newWidth) + x] = previousData[(y2 * oldWidth) + x2];
+                    if (index > 0) {
+                        if ((index) % newWidth != 0) {
+                            pixel2 = newBitmapPixels[index];
+                            pixel = newBitmapPixels[index - 1];
+                            pixel2 = (pixel2 & 0xff) * 0.299+((pixel2 >> 8) & 0xff) * 0.587+
+                            ((pixel2 > > 16) & 0xff) * 0.114;
+                            pixel = (pixel & 0xff) * 0.299+((pixel >> 8) & 0xff) * 0.587+
+                            ((pixel > > 16) & 0xff) * 0.114;
+                            hash = hash or ((pixel) < (pixel2))
+                            hash = hash shl 1L
+                        }
+                    }
+                    index++;
+                }
+            }
+            return hash;
+        }
+    }
 
-        inline fun Int.compareToInt() = if (this < 0) 1L else 0L
-
-        inline fun Int.asColorUInt() = this and 0xff
 */
 
-        //with 72 pixel array
-        private fun dhash1(pixels: IntArray): Int {
-            var width = 9
-            var height = 8
-            var hash = 0
 
-            for (pixelOffset in 0 until width * height) {
-                if ((pixelOffset + 1) % width == 0) {
-                    continue
-                }
+        external fun nativeDhash(b: Buffer, nw: Int, nh: Int, ow: Int, oh: Int): Long
 
-                var bit = (pixels[pixelOffset].asColorUInt() < pixels[pixelOffset + 1].asColorUInt()).toInt()
-                hash = hash shl 1 or bit
+        companion object {
+
+            // Used to load the 'native-lib' library on application startup.
+            init {
+                System.loadLibrary("native-lib")
             }
 
 
-            return hash
         }
-
-
-        inline fun Boolean.toInt() = if (this) 1 else 0
-
-        inline fun Int.asColorUInt() = this and 0xff
-
-/*
-        external fun dhash(array: IntArray): Int
-
-
-              companion object {
-
-          // Used to load the 'native-lib' library on application startup.
-          init {
-              //  System.loadLibrary("native-lib")
-          }
-
-
-      } */
 
 
     }

@@ -94,7 +94,7 @@ class ArtObjectRepository @Inject constructor(
                 }.toMutableList()
                 if (nextPage-1 == 0 ) {
                     var cloneItem = items.get(0)
-                    cloneItem.id = 142427
+                    cloneItem.id = 71490
                     items.add(0, cloneItem)
                 }
                 Log.d("REPO", "items insert starting" + items.size + ";;" + nextPage)

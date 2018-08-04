@@ -22,9 +22,7 @@ apply plugin: 'kotlin-android-extensions'
 
 apply plugin: 'kotlin-kapt'
 
-def my_boost_dir = local_props("boost.dir")
-def my_boost_dir_libs = my_boost_dir + "/libs/llvm"
-def my_boost_dir_inc  = my_boost_dir + "/include"
+
 
 android {
     compileSdkVersion build_versions.target_sdk
@@ -47,9 +45,7 @@ android {
 
 
 
-          // This is used in CMakeLists.txt so our native code can find/use (prebuilt) boost
-          arguments '-DMY_BOOST_LIBS_DIR=' + my_boost_dir_libs
-          arguments '-DMY_BOOST_INC_DIR='  + my_boost_dir_inc
+
 
         }
       }
@@ -98,7 +94,6 @@ android {
       // If you want to just include those necessary (eh chrono,, system) copy/link them to a separate dir, and reference that dir here instead.
       jniLibs.srcDirs = [
           // should contain any external libs which should be compiled in {armeabi-v7a,arm64-v8a,x86,x86_64,mips} subdirs
-          my_boost_dir_libs
 
           //, "src/main/JniLibs/boost" // could add additional dirs (with ABI subdirs) to be packaged into apk like this.
           // Relative paths like this will be interpreted as relative to "app" dir

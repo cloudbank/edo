@@ -44,5 +44,9 @@ Java_com_droidteahouse_edo_ui_ArtActivity_00024MyPreloadModelProvider_nativeDhas
             index++;
         }
     }
+
+    env->DeleteLocalRef(db);
+    delete (newBitmapPixels);
+
     return hash;
 }
