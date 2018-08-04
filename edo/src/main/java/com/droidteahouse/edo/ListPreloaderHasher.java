@@ -4,7 +4,6 @@ package com.droidteahouse.edo;
 import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 import android.widget.AbsListView;
 
 import com.bumptech.glide.RequestBuilder;
@@ -163,7 +162,7 @@ public class ListPreloaderHasher<T> implements AbsListView.OnScrollListener {
         int id = ((ArtObject) item).getId();
 
         if (!sp.contains(String.valueOf(id))) {
-            Log.d("HASHER", "ListPreloaderHasher not in SP:::" + ((ArtObject) item).getId() + sp);
+            //   Log.d("HASHER", "ListPreloaderHasher not in SP:::" + ((ArtObject) item).getId() + sp);
             sp.edit().putString(String.valueOf(id), "1").commit();
             preloadModelProvider.hashImage(preloadRequestBuilder, (ArtObject) item);
             //is there an actual bitmap lo aded here
