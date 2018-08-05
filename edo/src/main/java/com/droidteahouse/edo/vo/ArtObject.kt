@@ -2,6 +2,8 @@ package com.droidteahouse.edo.vo
 
 import android.arch.persistence.room.Entity
 import android.arch.persistence.room.PrimaryKey
+import android.arch.persistence.room.TypeConverters
+import com.droidteahouse.edo.db.Converters
 import com.google.gson.annotations.SerializedName
 
 @Entity(tableName = "artObjects") //indices = arrayOf(Index(value = "hash", unique = true)))
@@ -15,10 +17,13 @@ data class ArtObject(
 
         @PrimaryKey
         @SerializedName("id") var id: Int = 0,
+        @TypeConverters(Converters::class)
+        @SerializedName("people") var people: List<People> = listOf(),
         @SerializedName("title") var title: String = "") {
 
-        var page = 0
-        //@todo add a deserializer
-        //unique default
+    var page = 0
+
+    //@todo add a deserializer
+    //unique default
     // var hash: Int = 0
 }

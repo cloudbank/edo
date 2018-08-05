@@ -25,7 +25,6 @@ import android.content.SharedPreferences
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
-import android.os.SystemClock
 import android.support.v4.content.ContextCompat
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
@@ -103,13 +102,14 @@ class ArtActivity : DaggerAppCompatActivity() {
                 modelProvider.objects = it.toMutableList(
 
                 )
+                //@todo try on real device to tweak this
                 adapter.submitList(it)
-
+                //SystemClock.sleep(4000)
+                setTheme(R.style.AppTheme)
 
             })
         }
-        SystemClock.sleep(400)
-        setTheme(R.style.AppTheme)
+
         rvArt?.smoothScrollToPosition(0)
         artViewModel.networkState.observe(this, Observer
         {
