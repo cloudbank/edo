@@ -25,6 +25,7 @@ import android.content.SharedPreferences
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.os.SystemClock
 import android.support.v4.content.ContextCompat
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
@@ -66,6 +67,7 @@ class ArtActivity : DaggerAppCompatActivity() {
 
     private var mLayoutManager: LinearLayoutManager? = null
     override fun onCreate(savedInstanceState: Bundle?) {
+
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_art)
         createViews()
@@ -89,21 +91,26 @@ class ArtActivity : DaggerAppCompatActivity() {
         var preloader = RecyclerViewPreloader(
                 glide, modelProvider, FixedPreloadSizeProvider(55, 55), 10, spIds)
         rvArt?.addOnScrollListener(preloader)
-        artViewModel.artObjects.observe(this, Observer<PagedList<ArtObject>> {
+        if (artViewModel.artObjects.value?.size?.compareTo(0) !== 0) { //avoid 0 size onstart PR
+            artViewModel.artObjects.observe(this, Observer<PagedList<ArtObject>> {
 
-            //@todo  needs generalization and onsavedinstancestate for reclaim w small list SSOT db
-            if ((it?.size?.compareTo(0)!! > 0) and (it.size.compareTo(11) == 0) and !hashVisible) {
-                hashVisible = true
-                modelProvider.hashVisible(it.subList(0, 3), spIds)
-            }
-            modelProvider.objects = it.toMutableList(
+                //@todo  needs generalization and onsavedinstancestate for reclaim w small list SSOT db
+                if ((it?.size?.compareTo(0)!! > 0) and (it.size.compareTo(11) == 0) and !hashVisible) {
+                    hashVisible = true
+                    modelProvider.hashVisible(it.subList(0, 3), spIds)
 
-            )
-            adapter.submitList(it)
+                }
+                modelProvider.objects = it.toMutableList(
+
+                )
+                adapter.submitList(it)
 
 
-        })
-
+            })
+        }
+        SystemClock.sleep(400)
+        setTheme(R.style.AppTheme)
+        rvArt?.smoothScrollToPosition(0)
         artViewModel.networkState.observe(this, Observer
         {
             adapter.setNetworkState(it)
@@ -142,7 +149,7 @@ class ArtActivity : DaggerAppCompatActivity() {
 
         var objects: MutableList<ArtObject>? = mutableListOf()
         //@todo garbage free vs SP
-        //queue of bytebuffers
+        //queue of bytebuffers  companion object to re-use rather than create and GC--multithread access
 
 
         //before onscroll
@@ -153,6 +160,7 @@ class ArtActivity : DaggerAppCompatActivity() {
             for (i in 0 until sublist.size) {
                 val art: ArtObject = sublist.get(i)
                 spIds.edit().putString(art.id.toString(), "1").commit()
+                Log.d("MyPreloadModelProvider", "hashVisible::::" + art.id)
                 val rb = getPreloadRequestBuilder(art) as RequestBuilder<Any>
                 hashImage(rb, art)
             }

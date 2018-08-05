@@ -20,7 +20,6 @@ import android.arch.persistence.room.Database
 import android.arch.persistence.room.RoomDatabase
 import android.arch.persistence.room.TypeConverters
 import com.droidteahouse.edo.vo.ArtObject
-import com.droidteahouse.edo.vo.ImageHash
 
 
 /**
@@ -31,7 +30,7 @@ import com.droidteahouse.edo.vo.ImageHash
     version = 1,
     exportSchema = false
 )
-//@TypeConverters(Converters::class)
+@TypeConverters(Converters::class)
 abstract class ArtDb : RoomDatabase() {
   abstract fun artDao(): ArtDao
 }

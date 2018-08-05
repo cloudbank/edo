@@ -32,7 +32,7 @@ import com.droidteahouse.edo.vo.ArtObject
 class ArtObjectViewHolder(view: View, private val glide: GlideRequests)
     : RecyclerView.ViewHolder(view) {
     private val title: TextView = view.findViewById(R.id.title)
-    private val medium: TextView = view.findViewById(R.id.medium)
+    private val name: TextView = view.findViewById(R.id.name)
     //private val date: TextView = view.findViewById(R.id.date)
     internal val thumbnail: ImageView = view.findViewById(R.id.thumbnail)
     private val id: TextView = view.findViewById(R.id.id)
@@ -52,6 +52,7 @@ class ArtObjectViewHolder(view: View, private val glide: GlideRequests)
     fun bind(art: ArtObject?) {
         this.artObject = art
         title.text = art?.title?.trim() ?: "---"
+        name.text = art?.people?.get(0)?.name?.trim()
         //medium.text = art?.medium?.trim() ?: "---"
         // date.text = art?.date ?: "[no date listed]"
         id.text = "No." + art?.id
