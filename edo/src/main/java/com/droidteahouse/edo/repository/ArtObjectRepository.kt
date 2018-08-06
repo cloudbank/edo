@@ -95,6 +95,7 @@ class ArtObjectRepository @Inject constructor(
                 if (nextPage == 0) {
                     val f3 = items.get(0).copy()
                     f3.id = f3.id + 1
+                    f3.page = nextPage
                     items.add(1, f3)
 
                     var cloneItem = items.find { it.id == 142426 }
@@ -102,14 +103,16 @@ class ArtObjectRepository @Inject constructor(
                     if (cloneItem != null) {
                         val clone1 = cloneItem.copy()
                         clone1.id = 142427
+                        clone1.page = nextPage
                         items.add(index + 1, clone1)
-                        val clone2 = cloneItem.copy()
-                        clone2.id = 142428
-                        clone2.url = "https://i.imgur.com/BAA1Nb5.jpg"
-                        items.add(index + 2, clone2)
+                        //val clone2 = cloneItem.copy()
+                        //clone2.id = 142428
+                        //clone2.title="this is not exact"
+                        //clone2.url = "https://i.imgur.com/tyzzqnI.png"
+                        //items.add(index + 2, clone2)
                     } else {
-                        throw Exception("halt experiment, harvard has flushed the toilet")
-                        System.exit(0)
+                        // throw Exception("halt experiment, harvard has flushed the toilet")
+                        // System.exit(0)
                     }
                 }
                 Log.d("REPO", "items insert starting" + items.size + ";;" + nextPage)

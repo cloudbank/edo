@@ -94,19 +94,20 @@ class ArtActivity : DaggerAppCompatActivity() {
             artViewModel.artObjects.observe(this, Observer<PagedList<ArtObject>> {
 
                 //@todo  needs generalization and onsavedinstancestate for reclaim w small list SSOT db
-                if ((it?.size?.compareTo(0)!! > 0) and (it.size.compareTo(11) == 0) and !hashVisible) {
-                    hashVisible = true
-                    modelProvider.hashVisible(it.subList(0, 3), spIds)
+                if (it?.size?.compareTo(0)!! > 0) {
+                    if ((it.size.compareTo(13) == 0) and !hashVisible) {
+                        hashVisible = true
+                        modelProvider.hashVisible(it.subList(0, 3), spIds)
+                        //@todo try on real device to tweak this
+
+                        //SystemClock.sleep(4000)
+                        setTheme(R.style.AppTheme)
+
+                    }
+                    adapter.submitList(it)
+                    modelProvider.objects = it.toMutableList()
 
                 }
-                modelProvider.objects = it.toMutableList(
-
-                )
-                //@todo try on real device to tweak this
-                adapter.submitList(it)
-                //SystemClock.sleep(4000)
-                setTheme(R.style.AppTheme)
-
             })
         }
 
