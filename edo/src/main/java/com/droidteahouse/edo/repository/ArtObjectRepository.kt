@@ -93,9 +93,24 @@ class ArtObjectRepository @Inject constructor(
                     item
                 }.toMutableList()
                 if (nextPage == 0) {
-                    var cloneItem = items.get(0)
-                    cloneItem.id = 142427
-                    items.add(1, cloneItem)
+                    val f3 = items.get(0).copy()
+                    f3.id = f3.id + 1
+                    items.add(1, f3)
+
+                    var cloneItem = items.find { it.id == 142426 }
+                    val index = items.indexOf(cloneItem)
+                    if (cloneItem != null) {
+                        val clone1 = cloneItem.copy()
+                        clone1.id = 142427
+                        items.add(index + 1, clone1)
+                        val clone2 = cloneItem.copy()
+                        clone2.id = 142428
+                        clone2.url = "https://i.imgur.com/BAA1Nb5.jpg"
+                        items.add(index + 2, clone2)
+                    } else {
+                        throw Exception("halt experiment, harvard has flushed the toilet")
+                        System.exit(0)
+                    }
                 }
                 Log.d("REPO", "items insert starting" + items.size + ";;" + nextPage)
                 //@todo when insert it calls onchange--need to protect from extra calls to network?
