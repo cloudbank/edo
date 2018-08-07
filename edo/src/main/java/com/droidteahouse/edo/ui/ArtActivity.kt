@@ -61,7 +61,6 @@ class ArtActivity : DaggerAppCompatActivity() {
     @Inject
     @field:Named("ids")
     lateinit var spIds: SharedPreferences
-    var hashVisible = false
 
 
     private var mLayoutManager: LinearLayoutManager? = null
@@ -95,8 +94,9 @@ class ArtActivity : DaggerAppCompatActivity() {
 
                 //@todo  needs generalization and onsavedinstancestate for reclaim w small list SSOT db
                 if (it?.size?.compareTo(0)!! > 0) {
-                    if ((it.size.compareTo(13) == 0) and !hashVisible) {
-                        hashVisible = true
+//  check bundle for null and set it there to get it off sp and have a reclaim soln
+                    if (spIds.getString("hashVisible", "").equals("")) {
+                        spIds.edit().putString("hashVisible", "true").commit()
                         modelProvider.hashVisible(it.subList(0, 3), spIds)
                         //@todo try on real device to tweak this
 
@@ -185,6 +185,7 @@ class ArtActivity : DaggerAppCompatActivity() {
         }
 
 
+
         override fun hashImage(requestBuilder: RequestBuilder<Any>, item: ArtObject) {
             executor.execute {
                 val start = System.nanoTime()
@@ -194,9 +195,10 @@ class ArtActivity : DaggerAppCompatActivity() {
                 Log.d("MyPreloadModelProvider", "url:  " + item.url)
                 try {
                     //@todo do we need weakref here for target see RequestTracker
-                    bmd = requestBuilder.submit().get() as BitmapDrawable
+                    bmd = requestBuilder.submit(9, 8).get() as BitmapDrawable
+                    // todo sinc lanczos or whartever
                 } catch (e: Exception) {
-                    //@todo get timeout down
+                    //@todo get timeout down ds5678
                     // java.net.SocketTimeoutException(timeout)
                     Log.e("MyPreloadModelProvider", "exception" + e + item.id + ":::" + item.url)
                     // artViewModel.delete(item)
@@ -210,10 +212,10 @@ class ArtActivity : DaggerAppCompatActivity() {
                 bb.rewind()
                 val ib = bb.asIntBuffer()
                 //Preallocate a static pool of direct ByteBuffers at startup,
-                var hash = nativeDhash(ib, 9, 8, b.width, b.height)  //getIntField jni
+                var hash = (nativeDhash(ib, 9, 8, b.width, b.height))  //getIntField jni
 
 //@todo  threads don't just die in android
-                Log.d("MyPreloadModelProvider", "hash" + item.id + " :: " + hash.toString() + ":::" + Util.bitCount(hash))
+                Log.d("MyPreloadModelProvider", "hash" + item.id + " :: " + hash.toString() + ":::" + Util.countBits(hash))
 
                 if (sp.contains(hash.toString())) {
                     artViewModel.delete(item)
@@ -229,7 +231,7 @@ class ArtActivity : DaggerAppCompatActivity() {
         }
 
 
-        external fun nativeDhash(b: Buffer, nw: Int, nh: Int, ow: Int, oh: Int): Long
+        external fun nativeDhash(b: Buffer, nw: Int, nh: Int, ow: Int, oh: Int): Int
 
         companion object {
 

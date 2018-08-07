@@ -67,7 +67,7 @@ class AppModule {
         //  .authenticator(TokenAuthenticator())
         .build()
     return Retrofit.Builder()
-        .baseUrl("https://api.harvardartmuseums.org")
+            .baseUrl("https://api.harvardartmuseums.org".trim())
         .client(okHttpClient)
         // .addConverterFactory(GsonConverterFactory.create(GsonBuilder().excludeFieldsWithoutExposeAnnotation().create()))
         .addConverterFactory(GsonConverterFactory.create())
