@@ -98,6 +98,7 @@ class ArtObjectRepository @Inject constructor(
                     items[0] = clone1
                     val f3 = clone1.copy()
                     f3.id = f3.id - 1
+                    f3.title = "copy of" + f3.title
                     f3.page = nextPage
 
 
@@ -109,6 +110,7 @@ class ArtObjectRepository @Inject constructor(
                     val f4 = clone2.copy()
                     f4.id = (f4.id * 10) + 1
                     f4.page = nextPage
+                    f4.title = "copy of" + f4.title
                     items.add(5, f4)
 
                 }
