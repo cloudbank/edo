@@ -94,22 +94,20 @@ class ArtObjectRepository @Inject constructor(
                 }.toMutableList()
                 if (nextPage == 0) {
                     var clone1 = items.get(0)
-                    clone1.title = "[dupicate removed for] : " + clone1.title
-                    items[0] = clone1
+                    items[0].title = "[dupicate removed for] : " + clone1.title
                     val f3 = clone1.copy()
                     f3.id = f3.id - 1
                     f3.title = "copy of" + f3.title
-                    f3.page = nextPage
+                    f3.page = 1
 
 
                     items.add(1, f3)
 
                     var clone2 = items.get(4)
-                    clone2.title = "[dupicate removed for] : " + clone2.title
-                    items[4] = clone2
+                    items[4].title = "[dupicate removed for] : " + clone2.title
                     val f4 = clone2.copy()
                     f4.id = (f4.id * 10) + 1
-                    f4.page = nextPage
+                    f4.page = 1
                     f4.title = "copy of" + f4.title
                     items.add(5, f4)
 

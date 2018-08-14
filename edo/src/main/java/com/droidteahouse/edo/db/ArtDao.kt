@@ -25,7 +25,7 @@ interface ArtDao {
   @Insert(onConflict = OnConflictStrategy.REPLACE)
   fun insert(artItems: List<ArtObject>)
 
-  @Query("SELECT * FROM artObjects ORDER BY page ASC, id,title")
+  @Query("SELECT * FROM artObjects ORDER BY page ASC, id")
   fun artObjects(): DataSource.Factory<Int, ArtObject>
 
 
