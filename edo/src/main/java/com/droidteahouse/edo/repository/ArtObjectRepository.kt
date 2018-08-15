@@ -83,7 +83,8 @@ class ArtObjectRepository @Inject constructor(
             //
             db.runInTransaction {
 
-                val nextPage = db.artDao().getNextPageInArt()
+                var nextPage = db.artDao().getNextPageInArt()
+                if (nextPage == 0) nextPage = 1
                 val filtered = results.filter { it.url.length > 0 }
 
                 var items = filtered.map { item ->
@@ -92,22 +93,23 @@ class ArtObjectRepository @Inject constructor(
                     //item.hash = item.id //init before hash
                     item
                 }.toMutableList()
-                if (nextPage == 0) {
+                if (nextPage == 1) {
+                    items.sortBy { it.id }
                     var clone1 = items.get(0)
-                    items[0].title = "[dupicate removed for] : " + clone1.title
+                    clone1.title = "[dupicate removed for] : " + clone1.title
                     val f3 = clone1.copy()
                     f3.id = f3.id - 1
+                    f3.page = nextPage
                     f3.title = "copy of" + f3.title
-                    f3.page = 1
 
 
                     items.add(1, f3)
 
                     var clone2 = items.get(4)
-                    items[4].title = "[dupicate removed for] : " + clone2.title
+                    clone2.title = "[dupicate removed for] : " + clone2.title
                     val f4 = clone2.copy()
                     f4.id = (f4.id * 10) + 1
-                    f4.page = 1
+                    f4.page = nextPage
                     f4.title = "copy of" + f4.title
                     items.add(5, f4)
 
@@ -116,7 +118,6 @@ class ArtObjectRepository @Inject constructor(
                 //@todo when insert it calls onchange--need to protect from extra calls to network?
                 //Paging data source is getting next page?  check page
                 db.artDao().insert(items)
-                Log.d("REPO", "items insert done" + items.size + ";;" + nextPage)
 
             }
         }
