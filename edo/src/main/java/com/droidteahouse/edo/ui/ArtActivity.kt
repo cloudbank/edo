@@ -35,6 +35,7 @@ import com.droidteahouse.edo.*
 import com.droidteahouse.edo.repository.NetworkState
 import com.droidteahouse.edo.util.Util
 import com.droidteahouse.edo.vo.ArtObject
+import com.google.gson.Gson
 import dagger.android.support.DaggerAppCompatActivity
 import kotlinx.android.synthetic.main.activity_art.*
 import java.nio.Buffer
@@ -195,10 +196,9 @@ class ArtActivity : DaggerAppCompatActivity() {
                 Log.d("MyPreloadModelProvider", "url:  " + item.url)
                 try {
                     //@todo do we need weakref here for target see RequestTracker
-                    bmd = requestBuilder.submit(9, 8).get() as BitmapDrawable
-                    // todo sinc lanczos or whartever
+                    bmd = requestBuilder.submit().get() as BitmapDrawable
                 } catch (e: Exception) {
-                    //@todo get timeout down ds5678
+                    //@todo get timeout
                     // java.net.SocketTimeoutException(timeout)
                     Log.e("MyPreloadModelProvider", "exception" + e + item.id + ":::" + item.url)
                     // artViewModel.delete(item)
@@ -213,15 +213,29 @@ class ArtActivity : DaggerAppCompatActivity() {
                 val ib = bb.asIntBuffer()
                 //Preallocate a static pool of direct ByteBuffers at startup,
                 var hash = (nativeDhash(ib, 9, 8, b.width, b.height))  //getIntField jni
+                hash = hash and 0xFFFFFFFF
+                //when negative why is it filling in top 32 bits, jni conversion to big endian?
+                //long will be more accurate  truncate to integer
+
 
 //@todo  threads don't just die in android
-                Log.d("MyPreloadModelProvider", "hash" + item.id + " :: " + hash.toString() + ":::" + Util.countBits(hash))
-
-                if (sp.contains(hash.toString())) {
+                Log.d("MyPreloadModelProvider", "hash" + item.id + " :: " + hash.toString() + ":::" + Util.bitCount(hash))
+                //tweak the download size in repo from harvard
+                //Util  bitCounts into oh arraylist and check for this in native code
+                val bc = Util.bitCount(hash)
+                var s = sp.getStringSet(bc.toString(), mutableSetOf())
+                var set1 = sp.getStringSet((bc + 1).toString(), mutableSetOf())
+                set1.addAll(s)
+                set1.addAll(sp.getStringSet((bc - 1).toString(), mutableSetOf()))
+                //for (int i : set1) {
+                //onTrimMemory accessing native heap
+                if (sp.contains(hash.toString()) || withinThree(hash, set1)) {
                     artViewModel.delete(item)
                     Log.d("MyPreloadModelProvider", "****duplicate" + item.id + " :: " + hash.toString())
                 } else {
                     sp.edit().putString(hash.toString(), "1").commit()
+                    sp.edit().putStringSet(bc.toString(), s.plus(hash.toString())).commit()
+
                 }
 
                 Log.d("MyPreloadModelProvider", "Time::: " + (System.nanoTime() - start).toString())
@@ -231,7 +245,19 @@ class ArtActivity : DaggerAppCompatActivity() {
         }
 
 
-        external fun nativeDhash(b: Buffer, nw: Int, nh: Int, ow: Int, oh: Int): Int
+        private fun withinThree(hash: Long, set1: Set<String>): Boolean {
+            for (s in set1) {
+                if (Util.bitCount(hash xor java.lang.Long.parseLong(s)) <= 3) {
+                    Log.d("MyPreloadModelProvider", "****found non exact duplicate" + " :: " + hash.toString())
+                    return true
+                }
+
+            }
+            return false
+        }
+
+
+        external fun nativeDhash(b: Buffer, nw: Int, nh: Int, ow: Int, oh: Int): Long
 
         companion object {
 
@@ -239,6 +265,21 @@ class ArtActivity : DaggerAppCompatActivity() {
                 System.loadLibrary("native-lib")
             }
 
+            fun setComplexObject(sp: SharedPreferences, obj: IntArray, bitCount: String) {
+                val preferences = sp
+                val editor = preferences.edit()
+                editor.putString(bitCount, Gson().toJson(obj))
+                editor.commit()
+            }
+
+            fun getComplexObject(sp: SharedPreferences, bitCount: String): IntArray? {
+                val preferences = sp
+                val sobj = preferences.getString(bitCount, "")
+                return if (sobj == "")
+                    null
+                else
+                    Gson().fromJson(sobj, IntArray::class.java)
+            }
 
         }
 
