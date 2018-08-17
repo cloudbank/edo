@@ -15,8 +15,8 @@ optimizations.
 ## Edo v1   (POC demo portfolio app)
 >>>>
 
-<img src="https://i.imgur.com/6Pkt5H6.png" height="350"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
-<img src="https://i.imgur.com/gluxmZE.png" height="350"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+<img src="https://i.imgur.com/pAjy0QO.png" height="350"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+<img src="https://i.imgur.com/7GVKIzx.png" height="350"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
 
 >>>>Target 27
 >>>>SDK 14+, Oreo compatible, for phone and tablet
@@ -33,8 +33,6 @@ optimizations.
 
 >>>>VIEW   
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<img src="https://i.imgur.com/gluxmZE.png" height="350"/>
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 
 ### Designed with the Material theme and latest, greatest android libs for best viewing pleasure!
 ### 
