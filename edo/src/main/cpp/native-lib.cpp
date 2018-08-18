@@ -4,7 +4,7 @@
 /**3 stepsisters algo
  * scales the image using the fastest, simplest algorithm called "nearest neighbor, greyscales,
  * and fingerprints all in one*/
-extern "C" JNIEXPORT jint JNICALL
+extern "C" JNIEXPORT jlong JNICALL
 Java_com_droidteahouse_edo_ui_ArtActivity_00024MyPreloadModelProvider_nativeDhash(
         JNIEnv *env, jobject obj, jobject db, jint newWidth, jint newHeight, jint oldWidth,
         jint oldHeight) {
@@ -13,7 +13,7 @@ Java_com_droidteahouse_edo_ui_ArtActivity_00024MyPreloadModelProvider_nativeDhas
     jint *newBitmapPixels = new jint[newWidth * newHeight];
     jint x2, y2;
     jint index = 0;
-    jint hash = 0;
+    jlong hash = 0;
     //buffer has been allocated for size already on java side
     for (jint y = 0; y < newHeight; ++y) {
         for (jint x = 0; x < newWidth; ++x) {
@@ -33,7 +33,7 @@ Java_com_droidteahouse_edo_ui_ArtActivity_00024MyPreloadModelProvider_nativeDhas
                 if ((index) % newWidth != 0) {
                     jint pixel2 = newBitmapPixels[index];
                     jint pixel = newBitmapPixels[index - 1];
-
+                    //little endian
                     pixel2 = (pixel2 & 0xff) * 0.299 + ((pixel2 >> 8) & 0xff) * 0.587 +
                              ((pixel2 >> 16) & 0xff) * 0.114;
                     pixel = (pixel & 0xff) * 0.299 + ((pixel >> 8) & 0xff) * 0.587 +
@@ -42,7 +42,7 @@ Java_com_droidteahouse_edo_ui_ArtActivity_00024MyPreloadModelProvider_nativeDhas
                     //could store the gray pixels here to use with colhash and rotations
 
                     hash |= ((pixel) < (pixel2));
-                    hash <<= 1;
+                    hash <<= 1L;
                 }
 
             }
@@ -55,6 +55,11 @@ Java_com_droidteahouse_edo_ui_ArtActivity_00024MyPreloadModelProvider_nativeDhas
     //rotate matrix transform on grays
     env->DeleteLocalRef(db);
     delete (newBitmapPixels);
-
+//could try to hold arrays in native memory and return boolean
+    //onTrimMemory what would I do?  globalref to arrays to persist to db and recreate
     return hash;
 }
+
+
+
+

@@ -214,31 +214,39 @@ class ArtActivity : DaggerAppCompatActivity() {
                 //Preallocate a static pool of direct ByteBuffers at startup,
                 var hash = (nativeDhash(ib, 9, 8, b.width, b.height))  //getIntField jni
                 hash = hash and 0xFFFFFFFF
-                //when negative why is it filling in top 32 bits, jni conversion to big endian?
-                //long will be more accurate  truncate to integer
-
-
-//@todo  threads don't just die in android
-                Log.d("MyPreloadModelProvider", "hash" + item.id + " :: " + hash.toString() + ":::" + Util.bitCount(hash))
-                //tweak the download size in repo from harvard
-                //Util  bitCounts into oh arraylist and check for this in native code
                 val bc = Util.bitCount(hash)
-                var s = sp.getStringSet(bc.toString(), mutableSetOf())
-                var set1 = sp.getStringSet((bc + 1).toString(), mutableSetOf())
-                set1.addAll(s)
-                set1.addAll(sp.getStringSet((bc - 1).toString(), mutableSetOf()))
-                //for (int i : set1) {
-                //onTrimMemory accessing native heap
-                if (sp.contains(hash.toString()) || withinThree(hash, set1)) {
-                    artViewModel.delete(item)
-                    Log.d("MyPreloadModelProvider", "****duplicate" + item.id + " :: " + hash.toString())
-                } else {
-                    sp.edit().putString(hash.toString(), "1").commit()
-                    sp.edit().putStringSet(bc.toString(), s.plus(hash.toString())).commit()
+                Log.d("MyPreloadModelProvider", "hash" + item.id + " :: " + hash.toString() + ":::" + bc.toString())
 
+                var intBits = ArtApplication.bitset[0]
+                if ((intBits and 1 shl (bc - 1) != 1) || (intBits and 1 shl (bc) != 1) || (bc > 1 && (intBits and 1 shl (bc - 2) != 1))) {
+                    // @todo   ondestroy, reclaim, and ontrimmemory persist it to sp
+//@todo  threads don't just die in android
+                    //Log.d("MyPreloadModelProvider", "hash" + item.id + " :: " + hash.toString() + ":::" + bc.toString())
+                    //tweak the download size in repo from harvard
+                    //Util  bitCounts into oh arraylist and check for this in native code
+                    var s = sp.getStringSet(bc.toString(), mutableSetOf())
+                    var set1 = sp.getStringSet((bc + 1).toString(), mutableSetOf())
+                    set1.addAll(s)
+                    set1.addAll(sp.getStringSet((bc - 1).toString(), mutableSetOf()))
+                    //onTrimMemory accessing native heap
+                    if (sp.contains(hash.toString()) || withinThree(hash, set1)) {
+                        artViewModel.delete(item)
+                        Log.d("MyPreloadModelProvider", "****duplicate" + item.id + " :: " + hash.toString())
+                    } else {
+                        sp.edit().putString(hash.toString(), "1").commit()
+                        sp.edit().putStringSet(bc.toString(), s.plus(hash.toString())).commit()
+
+                    }
+
+                    Log.d("MyPreloadModelProvider", "Time::: " + (System.nanoTime() - start).toString())
+                } else {
+                    intBits = intBits or 1 shl (bc - 1)
+                    ArtApplication.bitset.put(0, intBits)
+                    sp.edit().putString(hash.toString(), "1").commit()
+                    val s = sp.getStringSet(bc.toString(), mutableSetOf())
+                    sp.edit().putStringSet(bc.toString(), s.plus(hash.toString())).commit()
                 }
 
-                Log.d("MyPreloadModelProvider", "Time::: " + (System.nanoTime() - start).toString())
             }
 
 
