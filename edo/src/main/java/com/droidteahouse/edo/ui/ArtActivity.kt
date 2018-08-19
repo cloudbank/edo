@@ -35,7 +35,6 @@ import com.droidteahouse.edo.*
 import com.droidteahouse.edo.repository.NetworkState
 import com.droidteahouse.edo.util.Util
 import com.droidteahouse.edo.vo.ArtObject
-import com.google.gson.Gson
 import dagger.android.support.DaggerAppCompatActivity
 import kotlinx.android.synthetic.main.activity_art.*
 import java.nio.Buffer
@@ -95,7 +94,7 @@ class ArtActivity : DaggerAppCompatActivity() {
 
                 //@todo  needs generalization and onsavedinstancestate for reclaim w small list SSOT db
                 if (it?.size?.compareTo(0)!! > 0) {
-//  check bundle for null and set it there to get it off sp and have a reclaim soln
+// @todo check bundle for null and set it there to get it off sp and have a reclaim soln
                     if (spIds.getString("hashVisible", "").equals("")) {
                         spIds.edit().putString("hashVisible", "true").commit()
                         modelProvider.hashVisible(it.subList(0, 3), spIds)
@@ -151,7 +150,6 @@ class ArtActivity : DaggerAppCompatActivity() {
 
         var objects: MutableList<ArtObject>? = mutableListOf()
         //@todo garbage free vs SP
-        //queue of bytebuffers  companion object to re-use rather than create and GC--multithread access
 
 
         //before onscroll
@@ -186,7 +184,6 @@ class ArtActivity : DaggerAppCompatActivity() {
         }
 
 
-
         override fun hashImage(requestBuilder: RequestBuilder<Any>, item: ArtObject) {
             executor.execute {
                 val start = System.nanoTime()
@@ -219,9 +216,8 @@ class ArtActivity : DaggerAppCompatActivity() {
 
                 var intBits = ArtApplication.bitset[0]
                 if ((intBits and 1 shl (bc - 1) != 1) || (intBits and 1 shl (bc) != 1) || (bc > 1 && (intBits and 1 shl (bc - 2) != 1))) {
-                    // @todo   ondestroy, reclaim, and ontrimmemory persist it to sp
+                    //@todo   ondestroy, reclaim, and ontrimmemory persist it to sp
 //@todo  threads don't just die in android
-                    //Log.d("MyPreloadModelProvider", "hash" + item.id + " :: " + hash.toString() + ":::" + bc.toString())
                     //tweak the download size in repo from harvard
                     //Util  bitCounts into oh arraylist and check for this in native code
                     var s = sp.getStringSet(bc.toString(), mutableSetOf())
@@ -232,20 +228,29 @@ class ArtActivity : DaggerAppCompatActivity() {
                     if (sp.contains(hash.toString()) || withinThree(hash, set1)) {
                         artViewModel.delete(item)
                         Log.d("MyPreloadModelProvider", "****duplicate" + item.id + " :: " + hash.toString())
-                    } else {
+                    }    /* else {
+                        intBits = intBits or 1 shl (bc - 1)
+                        ArtApplication.bitset.put(0, intBits)
                         sp.edit().putString(hash.toString(), "1").commit()
                         sp.edit().putStringSet(bc.toString(), s.plus(hash.toString())).commit()
 
-                    }
+                    }*/
 
-                    Log.d("MyPreloadModelProvider", "Time::: " + (System.nanoTime() - start).toString())
-                } else {
+
+                } //else {
+                if (intBits and 1 shl (bc - 1) != 1) {
                     intBits = intBits or 1 shl (bc - 1)
                     ArtApplication.bitset.put(0, intBits)
+                }
+                if (!sp.contains(hash.toString())) {
                     sp.edit().putString(hash.toString(), "1").commit()
-                    val s = sp.getStringSet(bc.toString(), mutableSetOf())
+                }
+                val s = sp.getStringSet(bc.toString(), mutableSetOf())
+                if (!s.contains(hash.toString())) {
                     sp.edit().putStringSet(bc.toString(), s.plus(hash.toString())).commit()
                 }
+                Log.d("MyPreloadModelProvider", "Time::: " + (System.nanoTime() - start).toString())
+                // }
 
             }
 
@@ -273,21 +278,7 @@ class ArtActivity : DaggerAppCompatActivity() {
                 System.loadLibrary("native-lib")
             }
 
-            fun setComplexObject(sp: SharedPreferences, obj: IntArray, bitCount: String) {
-                val preferences = sp
-                val editor = preferences.edit()
-                editor.putString(bitCount, Gson().toJson(obj))
-                editor.commit()
-            }
 
-            fun getComplexObject(sp: SharedPreferences, bitCount: String): IntArray? {
-                val preferences = sp
-                val sobj = preferences.getString(bitCount, "")
-                return if (sobj == "")
-                    null
-                else
-                    Gson().fromJson(sobj, IntArray::class.java)
-            }
 
         }
 
