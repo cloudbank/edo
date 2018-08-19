@@ -65,14 +65,12 @@ class ArtActivity : DaggerAppCompatActivity() {
 
     private var mLayoutManager: LinearLayoutManager? = null
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_art)
         createViews()
         initSwipeToRefresh()
     }
 
-    //@todo refactor and opts
     private fun createViews() {
         toolbar.setTitleTextColor(resources.getColor(R.color.colorPrimary))
         setSupportActionBar(toolbar)
@@ -94,7 +92,7 @@ class ArtActivity : DaggerAppCompatActivity() {
 
                 //@todo  needs generalization and onsavedinstancestate for reclaim w small list SSOT db
                 if (it?.size?.compareTo(0)!! > 0) {
-// @todo check bundle for null and set it there to get it off sp and have a reclaim soln
+
                     if (spIds.getString("hashVisible", "").equals("")) {
                         spIds.edit().putString("hashVisible", "true").commit()
                         modelProvider.hashVisible(it.subList(0, 3), spIds)
@@ -145,12 +143,9 @@ class ArtActivity : DaggerAppCompatActivity() {
 
 
     //setOnFlingListener
-
     class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var artViewModel: ArtViewModel, @Named("hashExec") var executor: ExecutorService, @Named("hashes") var sp: SharedPreferences) : ListPreloaderHasher.PreloadModelProvider<ArtObject> {
-
         var objects: MutableList<ArtObject>? = mutableListOf()
         //@todo garbage free vs SP
-
 
         //before onscroll
         fun hashVisible(sublist: List<ArtObject>, spIds: SharedPreferences): Unit {
@@ -164,20 +159,15 @@ class ArtActivity : DaggerAppCompatActivity() {
                 val rb = getPreloadRequestBuilder(art) as RequestBuilder<Any>
                 hashImage(rb, art)
             }
-
-
         }
 
-
         override fun getPreloadItems(position: Int): MutableList<ArtObject> {
-
             if (objects?.isEmpty()!! || position >= objects?.size!!) {
                 return mutableListOf()
             } else {
                 return Collections.singletonList(objects?.get(position))
             }
         }
-
 
         override fun getPreloadRequestBuilder(art: ArtObject): GlideRequest<Drawable> {
             return GlideApp.with(context).load(art.url).centerCrop()
@@ -188,11 +178,10 @@ class ArtActivity : DaggerAppCompatActivity() {
             executor.execute {
                 val start = System.nanoTime()
                 android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
-                //
                 lateinit var bmd: BitmapDrawable
                 Log.d("MyPreloadModelProvider", "url:  " + item.url)
                 try {
-                    //@todo do we need weakref here for target see RequestTracker
+                    //@todo do we need weakref here for target see RequestTracker, not include in cache as bitmap
                     bmd = requestBuilder.submit().get() as BitmapDrawable
                 } catch (e: Exception) {
                     //@todo get timeout
@@ -200,75 +189,72 @@ class ArtActivity : DaggerAppCompatActivity() {
                     Log.e("MyPreloadModelProvider", "exception" + e + item.id + ":::" + item.url)
                     // artViewModel.delete(item)
                     return@execute
-
                 }
-                val b = bmd.bitmap
-                val bb = ByteBuffer.allocateDirect((b.width * b.height) * 4)
+                var b = bmd.bitmap
+                //bitmap pool?  work on freeing memory here
+                val width = b.width
+                val height = b.height
+                var bb = ByteBuffer.allocateDirect((width * height) * 4)
                 bb.order(ByteOrder.nativeOrder())
                 b.copyPixelsToBuffer(bb)
+                //@todo
+                /*try {
+                    if (b != null && !b.isRecycled) {
+                        b.setPixels(null, 0, 0, 0, 0, 0, 0)
+                        b.recycle()
+                    }
+                } catch (e: Exception) {
+                    Log.e("MyPreloadModelProvider", "exception" + e + item.id + ":::" + item.url)
+                }*/
+
                 bb.rewind()
-                val ib = bb.asIntBuffer()
-                //Preallocate a static pool of direct ByteBuffers at startup,
-                var hash = (nativeDhash(ib, 9, 8, b.width, b.height))  //getIntField jni
+                var ib = bb.asIntBuffer()
+                var hash = (nativeDhash(ib, 9, 8, width, height))  //getIntField jni
+                bb = null
+                ib = null
                 hash = hash and 0xFFFFFFFF
                 val bc = Util.bitCount(hash)
                 Log.d("MyPreloadModelProvider", "hash" + item.id + " :: " + hash.toString() + ":::" + bc.toString())
-
-                var intBits = ArtApplication.bitset[0]
-                if ((intBits and 1 shl (bc - 1) != 1) || (intBits and 1 shl (bc) != 1) || (bc > 1 && (intBits and 1 shl (bc - 2) != 1))) {
+                if ( ArtApplication.bitset[0] and (1 shl (bc - 1)) == (1 shl (bc - 1)) || (ArtApplication.bitset[0] and (1 shl (bc)) == (1 shl (bc))) || ((bc > 1) && (ArtApplication.bitset[0] and (1 shl (bc - 2)) == (1 shl (bc - 2))) ) ) {
                     //@todo   ondestroy, reclaim, and ontrimmemory persist it to sp
-//@todo  threads don't just die in android
-                    //tweak the download size in repo from harvard
-                    //Util  bitCounts into oh arraylist and check for this in native code
-                    var s = sp.getStringSet(bc.toString(), mutableSetOf())
-                    var set1 = sp.getStringSet((bc + 1).toString(), mutableSetOf())
-                    set1.addAll(s)
-                    set1.addAll(sp.getStringSet((bc - 1).toString(), mutableSetOf()))
-                    //onTrimMemory accessing native heap
-                    if (sp.contains(hash.toString()) || withinThree(hash, set1)) {
+                    if (sp.contains(hash.toString())) {
                         artViewModel.delete(item)
-                        Log.d("MyPreloadModelProvider", "****duplicate" + item.id + " :: " + hash.toString())
-                    }    /* else {
-                        intBits = intBits or 1 shl (bc - 1)
-                        ArtApplication.bitset.put(0, intBits)
-                        sp.edit().putString(hash.toString(), "1").commit()
+                        Log.d("MyPreloadModelProvider", "****exact duplicate" + item.id + " :: " + hash.toString())
+                        val s = sp.getStringSet(bc.toString(), mutableSetOf())
                         sp.edit().putStringSet(bc.toString(), s.plus(hash.toString())).commit()
 
-                    }*/
-
-
-                } //else {
-                if (intBits and 1 shl (bc - 1) != 1) {
-                    intBits = intBits or 1 shl (bc - 1)
-                    ArtApplication.bitset.put(0, intBits)
-                }
-                if (!sp.contains(hash.toString())) {
+                    } else if (withinThree(hash, bc, sp)) {
+                        artViewModel.delete(item)
+                        Log.d("MyPreloadModelProvider", "****non exact duplicate" + item.id + " :: " + hash.toString())
+                        sp.edit().putString(hash.toString(), "1").commit()
+                        val s = sp.getStringSet(bc.toString(), mutableSetOf())
+                        sp.edit().putStringSet(bc.toString(), s.plus(hash.toString())).commit()
+                    }
+                } else {
+                    //volatile write
+                    ArtApplication.bitset.put(0,(ArtApplication.bitset[0] or (1 shl (bc - 1))))
                     sp.edit().putString(hash.toString(), "1").commit()
-                }
-                val s = sp.getStringSet(bc.toString(), mutableSetOf())
-                if (!s.contains(hash.toString())) {
+                    val s = sp.getStringSet(bc.toString(), mutableSetOf())
                     sp.edit().putStringSet(bc.toString(), s.plus(hash.toString())).commit()
                 }
                 Log.d("MyPreloadModelProvider", "Time::: " + (System.nanoTime() - start).toString())
-                // }
-
             }
-
-
         }
+        //@todo shutdown threadpool when reached last image
 
 
-        private fun withinThree(hash: Long, set1: Set<String>): Boolean {
-            for (s in set1) {
-                if (Util.bitCount(hash xor java.lang.Long.parseLong(s)) <= 3) {
-                    Log.d("MyPreloadModelProvider", "****found non exact duplicate" + " :: " + hash.toString())
+        fun withinThree(hash: Long, bc: Int, sp: SharedPreferences): Boolean {
+            //Util  bitCounts into oh arraylist and check for this in native code
+            var s = sp.getStringSet(bc.toString(), mutableSetOf())
+            s.addAll(sp.getStringSet((bc + 1).toString(), mutableSetOf()))
+            s.addAll(sp.getStringSet((bc - 1).toString(), mutableSetOf()))
+            for (st in s) {
+                if (Util.bitCount(hash xor java.lang.Long.parseLong(st)) <= 3) {
                     return true
                 }
-
             }
             return false
         }
-
 
         external fun nativeDhash(b: Buffer, nw: Int, nh: Int, ow: Int, oh: Int): Long
 
@@ -278,10 +264,7 @@ class ArtActivity : DaggerAppCompatActivity() {
                 System.loadLibrary("native-lib")
             }
 
-
-
         }
-
 
     }
 }
