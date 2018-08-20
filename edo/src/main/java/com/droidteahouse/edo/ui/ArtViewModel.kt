@@ -17,10 +17,12 @@
 package com.droidteahouse.edo.ui
 
 import android.arch.lifecycle.ViewModel
+import android.content.SharedPreferences
 import com.droidteahouse.edo.repository.ArtObjectRepository
 import com.droidteahouse.edo.vo.ArtObject
-import com.droidteahouse.edo.vo.ImageHash
+import java.nio.ByteBuffer
 import javax.inject.Inject
+import javax.inject.Named
 
 /**
  * VM
@@ -28,6 +30,25 @@ import javax.inject.Inject
 
 class ArtViewModel @Inject constructor(
     var repository: ArtObjectRepository) : ViewModel() {
+    @Inject
+    @field:Named("ids")
+    lateinit var spIds: SharedPreferences
+
+    companion object {
+        //config change proof
+        @Volatile
+        var bitset = ByteBuffer.allocateDirect(4).asIntBuffer()
+        @Volatile
+        var bits = bitset.get(0)
+
+        @Synchronized
+        fun putInt(i: Int) {
+            bitset.put(0, i)
+
+        }
+
+    }
+
 
   val repoResult = repository.getArtObjects()
 
@@ -72,5 +93,6 @@ class ArtViewModel @Inject constructor(
     // artObjects = repoResult.pagedList
     repository.delete(item)
   }
+
 
 }

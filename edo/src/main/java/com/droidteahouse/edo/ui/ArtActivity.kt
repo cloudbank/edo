@@ -1,3 +1,5 @@
+package com.droidteahouse.edo.ui
+
 /*
  * Copyright (C) 2017 The Android Open Source Project
  *
@@ -14,7 +16,6 @@
  * limitations under the License.
  */
 
-package com.droidteahouse.edo.ui
 
 import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProvider
@@ -71,6 +72,7 @@ class ArtActivity : DaggerAppCompatActivity() {
         initSwipeToRefresh()
     }
 
+
     private fun createViews() {
         toolbar.setTitleTextColor(resources.getColor(R.color.colorPrimary))
         setSupportActionBar(toolbar)
@@ -95,7 +97,7 @@ class ArtActivity : DaggerAppCompatActivity() {
 
                     if (spIds.getString("hashVisible", "").equals("")) {
                         spIds.edit().putString("hashVisible", "true").commit()
-                        modelProvider.hashVisible(it.subList(0, 3), spIds)
+                        modelProvider.hashVisible(it.subList(0, 4), spIds)
                         //@todo try on real device to tweak this
 
                         //SystemClock.sleep(4000)
@@ -115,6 +117,23 @@ class ArtActivity : DaggerAppCompatActivity() {
             adapter.setNetworkState(it)
         })
 
+
+    }
+
+
+    override fun onStart() {
+        super.onStart()
+        if (spIds.contains("bitset") && ArtViewModel.bits == 0) {
+            ArtViewModel.bitset.put(0, spIds.getInt("bitset", 0))
+
+        }
+
+    }
+
+    //  onStop is better but I moved it here to help w data loss on forced exits
+    override fun onPause() {
+        super.onPause()
+        spIds.edit().putInt("bitset", ArtViewModel.bits).commit()
 
     }
 
@@ -151,7 +170,7 @@ class ArtActivity : DaggerAppCompatActivity() {
         fun hashVisible(sublist: List<ArtObject>, spIds: SharedPreferences): Unit {
             //has the first 3
             Log.d("MyPreloadModelProvider", "hashVisible" + sublist.size + spIds)
-            sublist.sortedBy { it.id }
+            //sublist.sortedBy { it.id }
             for (i in 0 until sublist.size) {
                 val art: ArtObject = sublist.get(i)
                 spIds.edit().putString(art.id.toString(), "1").commit()
@@ -178,6 +197,7 @@ class ArtActivity : DaggerAppCompatActivity() {
             executor.execute {
                 val start = System.nanoTime()
                 android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
+
                 lateinit var bmd: BitmapDrawable
                 Log.d("MyPreloadModelProvider", "url:  " + item.url)
                 try {
@@ -209,37 +229,61 @@ class ArtActivity : DaggerAppCompatActivity() {
 
                 bb.rewind()
                 var ib = bb.asIntBuffer()
-                var hash = (nativeDhash(ib, 9, 8, width, height))  //getIntField jni
+                var hash = (nativeDhash(ib, 9, 8, width, height))
+//big endian from little JNI automatic? overflow  BigInteger
+                hash = hash and 0xFFFFFFFF
+                //timestamp that it returns
+                val bc = Util.bitCount(hash)
+                // ArtViewModel.bitset.put(0, (ArtViewModel.bitset[0] or (1 shl (bc - 1))))
                 bb = null
                 ib = null
-                hash = hash and 0xFFFFFFFF
-                val bc = Util.bitCount(hash)
-                Log.d("MyPreloadModelProvider", "hash" + item.id + " :: " + hash.toString() + ":::" + bc.toString())
-                if ( ArtApplication.bitset[0] and (1 shl (bc - 1)) == (1 shl (bc - 1)) || (ArtApplication.bitset[0] and (1 shl (bc)) == (1 shl (bc))) || ((bc > 1) && (ArtApplication.bitset[0] and (1 shl (bc - 2)) == (1 shl (bc - 2))) ) ) {
-                    //@todo   ondestroy, reclaim, and ontrimmemory persist it to sp
+                // --->8DIR100
+                //is this enough of a lock
+                synchronized(this) {
+
                     if (sp.contains(hash.toString())) {
                         artViewModel.delete(item)
                         Log.d("MyPreloadModelProvider", "****exact duplicate" + item.id + " :: " + hash.toString())
-                        val s = sp.getStringSet(bc.toString(), mutableSetOf())
-                        sp.edit().putStringSet(bc.toString(), s.plus(hash.toString())).commit()
-
-                    } else if (withinThree(hash, bc, sp)) {
-                        artViewModel.delete(item)
-                        Log.d("MyPreloadModelProvider", "****non exact duplicate" + item.id + " :: " + hash.toString())
+                        ArtViewModel.bits = ArtViewModel.bits or (1 shl (bc - 1))
+                        ArtViewModel.bitset.put(0, ArtViewModel.bits)
                         sp.edit().putString(hash.toString(), "1").commit()
                         val s = sp.getStringSet(bc.toString(), mutableSetOf())
                         sp.edit().putStringSet(bc.toString(), s.plus(hash.toString())).commit()
+
+                    } else if (((ArtViewModel.bits and (1 shl (bc - 1)) == (1 shl (bc - 1))) || (ArtViewModel.bits and (1 shl (bc)) == (1 shl (bc))) || ((bc > 1) && (ArtViewModel.bits and (1 shl (bc - 2)) == (1 shl (bc - 2))))) &&
+                            (withinThree(hash, bc, sp))) {
+                        artViewModel.delete(item)
+                        Log.d("MyPreloadModelProvider", "****non exact duplicate" + item.id + " :: " + hash.toString())
+                        ArtViewModel.bits = ArtViewModel.bits or (1 shl (bc - 1))
+                        ArtViewModel.bitset.put(0, ArtViewModel.bits)
+                        sp.edit().putString(hash.toString(), "1").commit()
+                        val s = sp.getStringSet(bc.toString(), mutableSetOf())
+                        sp.edit().putStringSet(bc.toString(), s.plus(hash.toString())).commit()
+
+                    } else {
+
+                        sp.edit().putString(hash.toString(), "1").commit()
+                        ArtViewModel.bits = ArtViewModel.bits or (1 shl (bc - 1))
+                        ArtViewModel.bitset.put(0, ArtViewModel.bits)
+                        val s = sp.getStringSet(bc.toString(), mutableSetOf())
+                        sp.edit().putStringSet(bc.toString(), s.plus(hash.toString())).commit()
+                        //return@execute
+                        //make volatile memcache of hashes as well
                     }
-                } else {
-                    //volatile write
-                    ArtApplication.bitset.put(0,(ArtApplication.bitset[0] or (1 shl (bc - 1))))
-                    sp.edit().putString(hash.toString(), "1").commit()
-                    val s = sp.getStringSet(bc.toString(), mutableSetOf())
-                    sp.edit().putStringSet(bc.toString(), s.plus(hash.toString())).commit()
                 }
-                Log.d("MyPreloadModelProvider", "Time::: " + (System.nanoTime() - start).toString())
+
+
+                //  Log.d("MyPreloadModelProvider", "Time::: " + )
+                //for crashes and force close but slows me down some more
+                //@todo detect a force close or global exception
+                // sp.edit().putInt("bitset", ArtViewModel.bitset[0]).commit()
+
+                Log.d("MyPreloadModelProvider", "hash" + item.id + " :: " + hash.toString() + ":::time::" + (System.nanoTime() - start).toString() + "--" + bc.toString())
             }
+
         }
+
+
         //@todo shutdown threadpool when reached last image
 
 

@@ -1,16 +1,15 @@
 # edo
 <img src="https://i.imgur.com/haEZ4TX.png" height="350"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 #
-<img src="https://i.imgur.com/pAjy0QO.png" height="350"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
- <img src="https://i.imgur.com/7GVKIzx.png" height="350"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
+<img src="https://i.imgur.com/erriDjy.png" height="350"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 
 
 
 
 branches:
 
-* [hammingWeight] uses a radical approach wrt GC by filtering images first with an int stored in a direct buffer that serves as a bitcount bitset. I am able to match colorized images and some variations in resolution within a hamming distance.  I am working on making it faster, more efficient, and refactoring it into a libray.  Amazingly, the NN is working without help from glide, but I need to download a fairly large image to get enough info for a fingerprint that works. 
+* [hammingWeight] uses a radical approach wrt GC by filtering images first with an int stored in a direct buffer that serves as a bitcount bitset. I am able to match colorized images and some variations in resolution within a hamming distance.  I am working on making it faster, more efficient, and refactoring it into a library.  Amazingly, the NN is working without help from glide, but I need to download a fairly large image to get enough info for a fingerprint that works. 
 
-* [master] soon will merge hammingWeight
+* [master] soon will merge hammingWeight and move on to a higher quality downscale
 
 * [kotlinDhash] with the java/kotlin side implementation of CSS--so far native is not worse
 
@@ -24,9 +23,9 @@ Preload image duplicate detector library under construction in experimental phas
 It currently uses SharedPrefs to persist hashes and ids and an int bitset stored in a direct buffer as a filter.
 
 
-## Edo v1   (POC demo portfolio app)
+## Edo v1.11   (POC demo portfolio app)
 >>>>
-
+Building a dhasher library within an image download API
 
 >>>>Target 27
 >>>>SDK 14+, Oreo compatible, for phone and tablet
