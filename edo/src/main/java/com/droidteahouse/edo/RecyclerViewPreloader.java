@@ -1,7 +1,6 @@
 package com.droidteahouse.edo;
 
 
-import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 
@@ -45,10 +44,10 @@ public final class RecyclerViewPreloader<T> extends RecyclerView.OnScrollListene
 
   public RecyclerViewPreloader(@NonNull RequestManager requestManager,
                                @NonNull PreloadModelProvider<T> preloadModelProvider,
-                               @NonNull PreloadSizeProvider<T> preloadDimensionProvider, int maxPreload, SharedPreferences sp) {
+                               @NonNull PreloadSizeProvider<T> preloadDimensionProvider, int maxPreload) {
 
     ListPreloaderHasher<T> listPreloader = new ListPreloaderHasher<>(requestManager, preloadModelProvider,
-            preloadDimensionProvider, maxPreload, sp);
+            preloadDimensionProvider, maxPreload);
     recyclerScrollListener = new RecyclerToListViewScrollListener(listPreloader);
   }
 

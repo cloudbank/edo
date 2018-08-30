@@ -1,7 +1,6 @@
 package com.droidteahouse.edo;
 
 
-import android.content.SharedPreferences;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
@@ -14,6 +13,7 @@ import com.bumptech.glide.request.target.SizeReadyCallback;
 import com.bumptech.glide.request.transition.Transition;
 import com.bumptech.glide.util.Synthetic;
 import com.bumptech.glide.util.Util;
+import com.droidteahouse.edo.ui.ArtViewModel;
 import com.droidteahouse.edo.vo.ArtObject;
 
 import java.util.List;
@@ -45,8 +45,7 @@ public class ListPreloaderHasher<T> implements AbsListView.OnScrollListener {
     private int lastFirstVisible = -1;
     private int totalItemCount;
     private boolean isIncreasing = true;
-    private SharedPreferences sp;
-
+//inject artviewmodel
 
     /**
      * Constructor for {@link ListPreloaderHasher} that accepts interfaces for providing
@@ -59,12 +58,11 @@ public class ListPreloaderHasher<T> implements AbsListView.OnScrollListener {
      */
     public ListPreloaderHasher(@NonNull RequestManager requestManager,
                                @NonNull ListPreloaderHasher.PreloadModelProvider<T> preloadModelProvider,
-                               @NonNull ListPreloaderHasher.PreloadSizeProvider<T> preloadDimensionProvider, int maxPreload, SharedPreferences sp) {
+                               @NonNull ListPreloaderHasher.PreloadSizeProvider<T> preloadDimensionProvider, int maxPreload) {
         this.requestManager = requestManager;
         this.preloadModelProvider = preloadModelProvider;
         this.preloadDimensionProvider = preloadDimensionProvider;
         this.maxPreload = maxPreload;
-        this.sp = sp;
         preloadTargetQueue = new ListPreloaderHasher.PreloadTargetQueue(maxPreload + 1);
     }
 
@@ -161,10 +159,16 @@ public class ListPreloaderHasher<T> implements AbsListView.OnScrollListener {
         }
 
         int id = ((ArtObject) item).getId();
+        //@todo the lib version own VM to be injected for use
+        //todo get from buffer to avoid GC
 
-        if (!sp.contains(String.valueOf(id))) {
-            Log.d("HASHER", "ListPreloaderHasher not in SP:::" + ((ArtObject) item).getId() + sp);
-            sp.edit().putString(String.valueOf(id), "1").commit();
+        if (!ArtViewModel.Companion.hasId(id)) {
+            Log.d("HASHER", "ListPreloaderHasher id not in cache:::" + ((ArtObject) item).getId());
+
+            //sp.edit().putString(String.valueOf(id), "1").commit();
+            ArtViewModel.Companion.putIdInCache(id);
+            //ArtViewModel.Companion.(id);
+
             preloadModelProvider.hashImage(preloadRequestBuilder, (ArtObject) item);
             //is there an actual bitmap lo aded here
         }

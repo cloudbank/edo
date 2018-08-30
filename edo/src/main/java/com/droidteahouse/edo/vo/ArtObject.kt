@@ -1,5 +1,6 @@
 package com.droidteahouse.edo.vo
 
+import android.arch.persistence.room.ColumnInfo
 import android.arch.persistence.room.Entity
 import android.arch.persistence.room.PrimaryKey
 import android.arch.persistence.room.TypeConverters
@@ -15,8 +16,11 @@ data class ArtObject(
 
         @SerializedName("objectid") var objectid: Int = 0,
 
-        @PrimaryKey
-        @SerializedName("id") var id: Int = 0,
+        @PrimaryKey(autoGenerate = true)
+        @Transient
+        @ColumnInfo(name = "id")
+        var id: Int = 0,
+
         @TypeConverters(Converters::class)
         @SerializedName("people") var people: List<People> = listOf(),
         @SerializedName("title") var title: String = "") {

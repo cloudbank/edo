@@ -17,22 +17,19 @@
 package com.droidteahouse.edo.ui
 
 import android.arch.lifecycle.ViewModel
-import android.content.SharedPreferences
+import android.os.Build
 import com.droidteahouse.edo.repository.ArtObjectRepository
 import com.droidteahouse.edo.vo.ArtObject
 import java.nio.ByteBuffer
+import java.util.*
 import javax.inject.Inject
-import javax.inject.Named
 
 /**
  * VM
  */
 
 class ArtViewModel @Inject constructor(
-    var repository: ArtObjectRepository) : ViewModel() {
-    @Inject
-    @field:Named("ids")
-    lateinit var spIds: SharedPreferences
+        var repository: ArtObjectRepository) : ViewModel() {
 
     companion object {
         //config change proof
@@ -47,52 +44,121 @@ class ArtViewModel @Inject constructor(
 
         }
 
+        //Bitset v int[] v boolean[] v byte[]
+        //I could get this from total records
+        //EdoObjects.info.totalrecords
+        //4000 items roughly in this canned search  --make bitset and hide it in direct buffer
+        @Volatile
+        // public var ids = IntArray(4000 shr 5)
+        var idcache = ByteBuffer.allocateDirect(4 * (4000 shr 5)).asIntBuffer()
+        //@todo maybe create directbufferprefs class
+        //private val rwlock = ReentrantReadWriteLock(), stampedlock, optimistic lock
+
+        fun stashVisible(list: IntArray) {
+            //synchronized(idcache) {
+            for (i in list) {
+                stashId(i)
+            }
+            //}
+        }
+
+        fun putIdInCache(id: Int) {
+
+            //synchronized(idcache) {
+            stashId(id)
+            // }
+
+        }
+
+        fun hasId(id: Int): Boolean {
+            return fetchId(id)
+        }
+
+        private fun fetchId(id: Int): Boolean {
+            val word = id shr 5
+            val bit = id and 0x1F   //mod 32
+            return (idcache[word] and (1 shl bit)) != 0
+        }
+
+        private fun stashId(id: Int): Unit {
+            val word = id shr 5
+            val bit = id and 0x1F
+            idcache.put(word, idcache[word] or (1 shl bit))
+        }
+
+
+        //3562 diff hashes if all unique
+        //EdoObjects.info.totalrecords
+        @Volatile
+        var hashes = BitSet(4000)
+        var hashCache = ByteBuffer.allocateDirect(4000 shr 3)
+////
+////1) parcelable bitset, IntArray
+//// 2) gson complex object
+/////3)
+
+
+        fun getHashesFromBB(): BitSet {
+
+            hashCache.rewind()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                return BitSet.valueOf(hashCache)
+            } else {
+                val b = BitSet()
+                while (hashCache.hasRemaining()) {
+                    b.set(hashCache.int)
+                }
+                return b
+            }
+
+        }
+
+
+        fun setHashesInBB() {
+            hashCache.clear()
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+                hashCache.put(hashes.toByteArray())
+            } else {
+                val ba = ByteArray(4000 shr 3)
+                var index = 0
+                var i = 0
+                while (i >= 0) {
+                    ba[index++] = hashes.nextSetBit(i++).toByte()
+
+                }
+                hashCache.put(ba)
+            }
+        }
+
+
     }
 
 
-  val repoResult = repository.getArtObjects()
+    val repoResult = repository.getArtObjects()
 
 
-  var artObjects = repoResult.pagedList
-  val networkState = repoResult.networkState
-  val refreshState = repoResult.refreshState
+    var artObjects = repoResult.pagedList
+    val networkState = repoResult.networkState
+    val refreshState = repoResult.refreshState
 
 
-  fun refresh() {
-    repoResult.refresh.invoke()
-  }
+    fun refresh() {
+        repoResult.refresh.invoke()
+    }
 
 
-  fun retry() {
-    repoResult.retry.invoke()
-  }
-
-  fun update(item: ArtObject) {
-    repository.update(item)
+    fun retry() {
+        repoResult.retry.invoke()
+    }
 
 
-  }
-/*
-  fun insertHash(item: ImageHash) {
-    repository.insertHash(item)
-
-
-  }
-
-
-  fun getHash(item: String): Int {
-    return repository.getHash(item)
-
-  }
-  */
-
-  fun delete(item: ArtObject) {
-    //dicey @todo no guarantee on bg thread and not mutable list
-    //not sure how this affects adapter, may need to do this in UI
-    // repoResult.pagedList.value?.remove(item)
-    // artObjects = repoResult.pagedList
-    repository.delete(item)
-  }
+    fun delete(item: ArtObject) {
+        //dicey @todo no guarantee on bg thread and not mutable list
+        //not sure how this affects adapter, may need to do this in UI
+        // repoResult.pagedList.value?.remove(item)
+        // artObjects = repoResult.pagedList
+        repository.delete(item)
+    }
 
 
 }

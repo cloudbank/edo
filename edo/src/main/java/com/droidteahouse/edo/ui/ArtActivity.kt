@@ -87,7 +87,8 @@ class ArtActivity : DaggerAppCompatActivity() {
         configRV()
 
         var preloader = RecyclerViewPreloader(
-                glide, modelProvider, FixedPreloadSizeProvider(55, 55), 10, spIds)
+                glide, modelProvider, FixedPreloadSizeProvider(55, 55), 10)
+
         rvArt?.addOnScrollListener(preloader)
         if (artViewModel.artObjects.value?.size?.compareTo(0) !== 0) { //avoid 0 size onstart PR
             artViewModel.artObjects.observe(this, Observer<PagedList<ArtObject>> {
@@ -97,8 +98,11 @@ class ArtActivity : DaggerAppCompatActivity() {
 
                     if (spIds.getString("hashVisible", "").equals("")) {
                         spIds.edit().putString("hashVisible", "true").commit()
-                        modelProvider.hashVisible(it.subList(0, 4), spIds)
-                        //@todo try on real device to tweak this
+
+                        ArtViewModel.stashVisible((it.subList(0, 4).map { it.id }.toIntArray()))
+                        modelProvider.hashVisible(it.subList(0, 4))
+
+                        //@todo try on real device to tweak this modelProvider . hashVisible (it.subList(0, 4))
 
                         //SystemClock.sleep(4000)
                         setTheme(R.style.AppTheme)
@@ -125,14 +129,15 @@ class ArtActivity : DaggerAppCompatActivity() {
         super.onStart()
         if (spIds.contains("bitset") && ArtViewModel.bits == 0) {
             ArtViewModel.bitset.put(0, spIds.getInt("bitset", 0))
-
         }
-
     }
 
+
     //  onStop is better but I moved it here to help w data loss on forced exits
-    override fun onPause() {
-        super.onPause()
+    override fun onStop() {
+        super.onStop()
+        //@todo persist  via protobuf
+
         spIds.edit().putInt("bitset", ArtViewModel.bits).commit()
 
     }
@@ -167,13 +172,14 @@ class ArtActivity : DaggerAppCompatActivity() {
         //@todo garbage free vs SP
 
         //before onscroll
-        fun hashVisible(sublist: List<ArtObject>, spIds: SharedPreferences): Unit {
+        fun hashVisible(sublist: List<ArtObject>): Unit {
             //has the first 3
-            Log.d("MyPreloadModelProvider", "hashVisible" + sublist.size + spIds)
+            Log.d("MyPreloadModelProvider", "hashVisible" + sublist.size + ArtViewModel.Companion.idcache)
             //sublist.sortedBy { it.id }
             for (i in 0 until sublist.size) {
                 val art: ArtObject = sublist.get(i)
-                spIds.edit().putString(art.id.toString(), "1").commit()
+                //spIds.edit().putString(art.id.toString(), "1").commit()
+                //done in stash visible
                 Log.d("MyPreloadModelProvider", "hashVisible::::" + art.id)
                 val rb = getPreloadRequestBuilder(art) as RequestBuilder<Any>
                 hashImage(rb, art)

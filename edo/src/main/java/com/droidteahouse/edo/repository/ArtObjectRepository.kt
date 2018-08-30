@@ -98,7 +98,7 @@ class ArtObjectRepository @Inject constructor(
                     var clone1 = items.get(0)
                     clone1.title = "[dupicate 0 removed for] : " + clone1.title
                     val f3 = clone1.copy()
-                    f3.id = f3.id - 1
+                    //f3.id = f3.id - 1
                     f3.page = nextPage
                     f3.title = "copy of 0 " + f3.title
                     items.add(1, f3)
@@ -106,14 +106,14 @@ class ArtObjectRepository @Inject constructor(
                     var clone2 = items.get(4)
                     clone2.title = "[dupicate removed for 4] : " + clone2.title
                     val f4 = clone2.copy()
-                    f4.id = (f4.id * 10) + 1
+                    // f4.id = (f4.id * 10) + 1
                     f4.page = nextPage
                     f4.title = "copy of 4 " + f4.title
                     items.add(5, f4)
 
 
                     var clone3 = clone2.copy()
-                    clone3.id = 1
+                    //clone3.id = 1
                     clone3.title = "assets1"
                     //val photoUri = Uri.fromFile(File("file:///android_asset/402004259.jpeg"))
                     clone3.page = nextPage
@@ -121,7 +121,7 @@ class ArtObjectRepository @Inject constructor(
                     items.add(0, clone3)
 
                     var clone4 = clone2.copy()
-                    clone4.id = 2
+                    //clone4.id = 2
                     clone4.title = "assets2"
                     //val photoUri = Uri.fromFile(File("file:///android_asset/402004259.jpeg"))
                     clone4.page = nextPage

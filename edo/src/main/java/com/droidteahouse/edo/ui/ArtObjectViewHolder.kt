@@ -35,8 +35,9 @@ class ArtObjectViewHolder(view: View, private val glide: GlideRequests)
     private val name: TextView = view.findViewById(R.id.name)
     //private val date: TextView = view.findViewById(R.id.date)
     internal val thumbnail: ImageView = view.findViewById(R.id.thumbnail)
-    private val id: TextView = view.findViewById(R.id.id)
+    private val objectid: TextView = view.findViewById(R.id.objectid)
     // private var artObject: ArtObject? = null
+
 
     init {
         view.setOnClickListener {
@@ -55,7 +56,7 @@ class ArtObjectViewHolder(view: View, private val glide: GlideRequests)
         name.text = if (art?.people!!.isNotEmpty()) art.people.get(0).name.trim() else ""
         //medium.text = art?.medium?.trim() ?: "---"
         // date.text = art?.date ?: "[no date listed]"
-        id.text = "No." + art.id
+        objectid.text = "No." + art.objectid
         glide.load(art.url)
                 .centerCrop()
                 .placeholder(R.drawable.ic_insert_photo_black_48dp)
