@@ -27,7 +27,7 @@ import com.droidteahouse.edo.preload.ListPreloaderHasher.PreloadSizeProvider
  *
  * @param <T> The type of the model being displayed in the [RecyclerView].
 </T> */
-class RecyclerViewPreloader<T>
+
 /**
  * Constructor that accepts interfaces for providing the dimensions of images to preload, the list
  * of models to preload for a given position, and the request to use to load images.
@@ -36,6 +36,7 @@ class RecyclerViewPreloader<T>
  * @param preloadDimensionProvider Provides the dimensions of images to load.
  * @param maxPreload               Maximum number of items to preload.
  */
+class RecyclerViewPreloader<T>
 (requestManager: RequestManager,
  preloadModelProvider: PreloadModelProvider<T>,
  preloadDimensionProvider: PreloadSizeProvider<T>, maxPreload: Int) : RecyclerView.OnScrollListener() {
@@ -44,14 +45,13 @@ class RecyclerViewPreloader<T>
 
 
     init {
-
         val listPreloader = ListPreloaderHasher(requestManager, preloadModelProvider,
                 preloadDimensionProvider, maxPreload)
         recyclerScrollListener = RecyclerToListViewScrollListener(listPreloader)
     }
 
     override fun onScrolled(recyclerView: RecyclerView?, dx: Int, dy: Int) {
-        recyclerScrollListener.onScrolled(recyclerView!!, dx, dy)
+        recyclerScrollListener.onScrolled(recyclerView, dx, dy)
     }
 }
 

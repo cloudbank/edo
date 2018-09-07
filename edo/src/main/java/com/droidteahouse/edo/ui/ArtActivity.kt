@@ -22,8 +22,9 @@ import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProvider
 import android.arch.lifecycle.ViewModelProviders
 import android.arch.paging.PagedList
-import android.content.SharedPreferences
+import android.os.Build
 import android.os.Bundle
+import android.support.annotation.RequiresApi
 import android.support.v4.content.ContextCompat
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
@@ -37,7 +38,12 @@ import com.droidteahouse.edo.preload.RecyclerViewPreloader
 import com.droidteahouse.edo.repository.NetworkState
 import com.droidteahouse.edo.vo.ArtObject
 import dagger.android.support.DaggerAppCompatActivity
+import io.paperdb.Paper
 import kotlinx.android.synthetic.main.activity_art.*
+import kotlinx.coroutines.experimental.CoroutineStart
+import kotlinx.coroutines.experimental.GlobalScope
+import kotlinx.coroutines.experimental.ThreadPoolDispatcher
+import kotlinx.coroutines.experimental.launch
 import javax.inject.Inject
 import javax.inject.Named
 
@@ -54,20 +60,25 @@ class ArtActivity : DaggerAppCompatActivity() {
     }
     @Inject
     lateinit var modelProvider: MyPreloadModelProvider<ArtObject>
+
+    //@todo instead of injection, use Cache stc ctx?
     @Inject
-    @field:Named("ids")
-    lateinit var spIds: SharedPreferences
+    @field:Named("stc")
+    lateinit var stcContext: ThreadPoolDispatcher
+
     var onsavedstate = false
 
     private var mLayoutManager: LinearLayoutManager? = null
+    @RequiresApi(Build.VERSION_CODES.KITKAT)
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
-        //@todo check if this is always true and if needed for config?  VM should be intact
         if (savedInstanceState != null) {
             Log.d("oncreate", "onSaveInstanceState")
-            ArtViewModel.idcache = savedInstanceState.getIntArray("idcache")
-            ArtViewModel.bits = savedInstanceState.getInt("bits")
+            MyPreloadModelProvider.Cache.idcache = savedInstanceState.getIntArray("idcache")
+            // MyPreloadModelProvider.bits = savedInstanceState.getInt("bits")
+            //@todo the arraymap ; for now the bg
+            MyPreloadModelProvider.Cache.hashcache = Paper.book().read("hashes")
 
             onsavedstate = true
         }
@@ -80,8 +91,6 @@ class ArtActivity : DaggerAppCompatActivity() {
         super.onRestoreInstanceState(savedInstanceState)
         if (savedInstanceState != null) {
             Log.d("onRestoreInstanceState", "onRestoreInstanceState")
-            ArtViewModel.idcache = savedInstanceState?.getString("idcache")?.map({ it.toInt() })!!.toIntArray()
-            ArtViewModel.bits = savedInstanceState?.getInt("bits")
             onsavedstate = true
         }
     }
@@ -90,11 +99,13 @@ class ArtActivity : DaggerAppCompatActivity() {
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
         Log.d("ONSAVEINSTANCESTATE", "ONSAVEINSTANCESTATE")
-        outState.putInt("bits", ArtViewModel.bits)
-        outState.putIntArray("idcache", ArtViewModel.idcache)
-
+        // outState.putInt("bits", MyPreloadModelProvider.bits)
+        outState.putIntArray("idcache", MyPreloadModelProvider.Cache.idcache)
+        //@todo bg thread; arraymap to bundle
+        Paper.book().write("hashes", MyPreloadModelProvider.Cache.hashcache)
     }
 
+    @RequiresApi(Build.VERSION_CODES.KITKAT)
     private fun createViews() {
         toolbar.setTitleTextColor(resources.getColor(R.color.colorPrimary))
         setSupportActionBar(toolbar)
@@ -117,19 +128,21 @@ class ArtActivity : DaggerAppCompatActivity() {
 
                 //@todo  needs generalization and onsavedinstancestate for reclaim w small list SSOT db
                 if (it?.size?.compareTo(0)!! > 0) {
+                    GlobalScope.launch(stcContext, CoroutineStart.DEFAULT, null, {
+                        if (!Paper.book().contains("hashVisible")) {
 
-                    if (!spIds.contains("hashVisible")) {
-                        spIds.edit().putString("hashVisible", "true").commit()
+                            launch(stcContext) {
+                                Paper.book().write("hashVisible", true)
+                            }
 
-                        ArtViewModel.stashVisible((it.subList(0, 4).map { it.id }.toIntArray()))
-                        modelProvider.hashVisible(it.subList(0, 4))
+                            modelProvider.hashVisible(it.subList(0, 4))
+                            runOnUiThread {
+                                setTheme(R.style.AppTheme)
+                            }
 
-                        //@todo try on real device to tweak this modelProvider . hashVisible (it.subList(0, 4))
+                        }
+                    })
 
-                        //SystemClock.sleep(4000)
-                        setTheme(R.style.AppTheme)
-
-                    }
                     adapter.submitList(it)
                     modelProvider.objects = it.toMutableList()
 
@@ -150,12 +163,23 @@ class ArtActivity : DaggerAppCompatActivity() {
     override fun onResume() {
         super.onResume()
         if (!onsavedstate) {
-            if (spIds.contains("bits") && ArtViewModel.bits == 0) {
-                ArtViewModel.bits = spIds.getInt("bits", 0)
+/*
+            if (Paper.book().contains("bits") && MyPreloadModelProvider.bits == 0) {
+                launch(counterContext) {
+                    MyPreloadModelProvider.bits = Paper.book().read("bits", 0)
+                }
+            }*/
+            if (Paper.book().contains("ids") && MyPreloadModelProvider.Cache.idcache[0] == 0) {
+                GlobalScope.launch(stcContext, CoroutineStart.DEFAULT, null, {
+                    MyPreloadModelProvider.Cache.idcache = Paper.book().read("ids")
+                })
             }
-            //@todo           //------>@todo  @todo
-            //if (spIds.contains("idcache") && (ArtViewModel.idcache[0] == 0)) {
-            //   ArtViewModel.idcache = spIds.getString("idcache", "0")
+            if (Paper.book().contains("hashes") && MyPreloadModelProvider.Cache.hashcache.isEmpty()) {
+                GlobalScope.launch(stcContext, CoroutineStart.DEFAULT, null, {
+                    MyPreloadModelProvider.Cache.hashcache = Paper.book().read("hashes")
+                })
+            }
+
         }
 
 
@@ -164,28 +188,38 @@ class ArtActivity : DaggerAppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        //@todo persist  via flatbuffer
+        //@todo where to really call this?
+        modelProvider.cleanUp()
         Log.d("ONDESTROY", "ONDESTROY")
 
     }
 
-    //  onStop is better but I moved it here to help w data loss on forced exits
     override fun onStop() {
         super.onStop()
-        //@todo persist  via flatbuffer
         Log.d("ONSTOP", "ONSTOP")
-        // if (ArtViewModel.bits != 0) spIds.edit().putInt("bits", ArtViewModel.bits).commit()
-        // if (ArtViewModel.idcache[0] != 0) spIds.edit().putString("idcache", ArtViewModel.idcache.contentToString()).commit()
 
 
     }
 
     override fun onPause() {
         super.onPause()
-        //@todo persist  via flatbuffer
         Log.d("ONPAUSE", "ONPAUSE")
-        if (ArtViewModel.bits != 0) spIds.edit().putInt("bits", ArtViewModel.bits).commit()
-        if (ArtViewModel.idcache[0] != 0) spIds.edit().putString("idcache", ArtViewModel.idcache.contentToString()).commit()
+/*
+        if (MyPreloadModelProvider.bits != 0) {
+            launch(counterContext) {
+                Paper.book().write("bits", MyPreloadModelProvider.bits)
+            }
+        }*/
+        if (MyPreloadModelProvider.Cache.idcache[0] != 0) {
+            GlobalScope.launch(stcContext, CoroutineStart.DEFAULT, null, {
+                Paper.book().write("ids", MyPreloadModelProvider.Cache.idcache)
+            })
+        }
+        if (!MyPreloadModelProvider.Cache.hashcache.isEmpty()) {
+            GlobalScope.launch(stcContext, CoroutineStart.DEFAULT, null, {
+                Paper.book().write("hashes", MyPreloadModelProvider.Cache.hashcache)
+            })
+        }
 
 
     }
