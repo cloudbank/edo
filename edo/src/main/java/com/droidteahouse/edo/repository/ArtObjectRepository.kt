@@ -93,28 +93,31 @@ class ArtObjectRepository @Inject constructor(
                     //item.hash = item.id //init before hash
                     item
                 }.toMutableList()
+                items.sortBy { it.id }
+
+                var clone1 = items.get(0)
+                clone1.title = "[duplicate 0 removed for PAGE::" + nextPage + "] : " + clone1.title
+                val f3 = clone1.copy()
+                //f3.id = f3.id - 1
+                f3.page = nextPage
+                f3.title = "copy of 0 " + f3.title
+                items.add(1, f3)
+
                 if (nextPage == 1) {
-                    items.sortBy { it.id }
-                    var clone1 = items.get(0)
-                    clone1.title = "[dupicate 0 removed for] : " + clone1.title
-                    val f3 = clone1.copy()
-                    //f3.id = f3.id - 1
-                    f3.page = nextPage
-                    f3.title = "copy of 0 " + f3.title
-                    items.add(1, f3)
+
 
                     var clone2 = items.get(4)
-                    clone2.title = "[dupicate removed for 4] : " + clone2.title
+                    clone2.title = "[dupicate removed for ] : " + clone2.title
                     val f4 = clone2.copy()
                     // f4.id = (f4.id * 10) + 1
                     f4.page = nextPage
-                    f4.title = "copy of 4 " + f4.title
+                    f4.title = "copy of " + f4.title
                     items.add(5, f4)
 
 
                     var clone3 = clone2.copy()
                     //clone3.id = 1
-                    clone3.title = "assets1"
+                    clone3.title = "assets1 --original copy  of 3 dupes"
                     //val photoUri = Uri.fromFile(File("file:///android_asset/402004259.jpeg"))
                     clone3.page = nextPage
                     clone3.url = "file:///android_asset/402004259.jpeg"
@@ -122,11 +125,20 @@ class ArtObjectRepository @Inject constructor(
 
                     var clone4 = clone2.copy()
                     //clone4.id = 2
-                    clone4.title = "assets2"
+                    clone4.title = "assets2 non exact copy of assets1"
                     //val photoUri = Uri.fromFile(File("file:///android_asset/402004259.jpeg"))
                     clone4.page = nextPage
                     clone4.url = "file:///android_asset/BAA1Nb5.jpg"
                     items.add(1, clone4)
+
+                    var clone5 = clone2.copy()
+                    //clone4.id = 2
+                    clone5.title = "assets3 non exact copy of assets1"
+                    //val photoUri = Uri.fromFile(File("file:///android_asset/402004259.jpeg"))
+                    clone5.page = nextPage
+                    clone5.url = "file:///android_asset/BAA1Nb5222.png"
+                    items.add(2, clone5)
+
 
                 }
                 Log.d("REPO", "items insert starting" + items.size + ";;" + nextPage)

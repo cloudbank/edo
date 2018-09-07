@@ -25,38 +25,35 @@ apply plugin: 'kotlin-kapt'
 
 
 android {
-    compileSdkVersion build_versions.target_sdk
-    buildToolsVersion build_versions.build_tools
+    compileSdkVersion 27
+    buildToolsVersion '27.0.3'
     defaultConfig {
         applicationId "com.droidteahouse.edo"
-        minSdkVersion build_versions.min_sdk
-        targetSdkVersion build_versions.target_sdk
-        versionCode 7
-        versionName "1.7"
+        minSdkVersion  14
+        targetSdkVersion 27
+        versionCode 12
+        versionName "1.12"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
 
-      externalNativeBuild {
-        cmake {
-          // flags for the c++ compiler eg "-std=c++14 -frtti -fexceptions"
-          cppFlags "-std=c++14"
+        externalNativeBuild {
+            cmake {
+                // flags for the c++ compiler eg "-std=c++14 -frtti -fexceptions"
+                cppFlags "-std=c++14"
 
-          // this causes libc++_shared.so to get packaged into .apk
-          arguments '-DANDROID_STL=c++_shared'
-
-
+                // this causes libc++_shared.so to get packaged into .apk
+                arguments '-DANDROID_STL=c++_shared'
 
 
-
+            }
         }
-      }
 
-      ndk {
-        // Specifies the ABI configurations of your native
-        // libraries Gradle should build and package with your APK.
-        // need to also have ~ boost binaries built for each abi specified here
-        // abiFilters 'armeabi-v7a', 'x86', 'x86_64', 'arm64-v8a'
-        abiFilters 'armeabi-v7a','x86', 'x86_64', 'arm64-v8a'
-      }
+        ndk {
+            // Specifies the ABI configurations of your native
+            // libraries Gradle should build and package with your APK.
+            // need to also have ~ boost binaries built for each abi specified here
+            // abiFilters 'armeabi-v7a', 'x86', 'x86_64', 'arm64-v8a'
+            abiFilters 'armeabi-v7a', 'x86', 'x86_64', 'arm64-v8a'
+        }
 
     }
     buildTypes {
@@ -65,6 +62,7 @@ android {
             useProguard false
             proguardFiles getDefaultProguardFile('proguard-android.txt'),
                     'proguard-rules.pro'
+            proguardFile '/Users/sgv/Downloads/edo/edo/proguard-rules.pro'
         }
         release {
             minifyEnabled true
@@ -77,35 +75,37 @@ android {
         androidTest.java.srcDirs += "src/test-common/java"
         test.java.srcDirs += "src/test-common/java"
     }
-
-
     externalNativeBuild {
         cmake {
             path 'CMakeLists.txt'
         }
     }
-  sourceSets {
-    main {
-      // Android Studio doesn't package precompiled external (*.so) libs into apk, even if linked against via "add_library (... SHARED IMPORTED) in CMakeLists.txt
-      // See eg https://stackoverflow.com/questions/24357687/how-to-include-so-library-in-android-studio/29234765
-      // Hopefully this will be remedied in near future.
-      // As a workaroun in the meantime, need to add them manually to jniLibs.srcDirs
-      // Note: This causes ALL *.so files in ABI (eg "armeabi-v7a") subdir of this dir to get packaged into .apk - relative to "app" dir
-      // If you want to just include those necessary (eh chrono,, system) copy/link them to a separate dir, and reference that dir here instead.
-      jniLibs.srcDirs = [
-          // should contain any external libs which should be compiled in {armeabi-v7a,arm64-v8a,x86,x86_64,mips} subdirs
+    sourceSets {
+        main {
+            // Android Studio doesn't package precompiled external (*.so) libs into apk, even if linked against via "add_library (... SHARED IMPORTED) in CMakeLists.txt
+            // See eg https://stackoverflow.com/questions/24357687/how-to-include-so-library-in-android-studio/29234765
+            // Hopefully this will be remedied in near future.
+            // As a workaroun in the meantime, need to add them manually to jniLibs.srcDirs
+            // Note: This causes ALL *.so files in ABI (eg "armeabi-v7a") subdir of this dir to get packaged into .apk - relative to "app" dir
+            // If you want to just include those necessary (eh chrono,, system) copy/link them to a separate dir, and reference that dir here instead.
+            jniLibs.srcDirs = [
+                    // should contain any external libs which should be compiled in {armeabi-v7a,arm64-v8a,x86,x86_64,mips} subdirs
 
-          //, "src/main/JniLibs/boost" // could add additional dirs (with ABI subdirs) to be packaged into apk like this.
-          // Relative paths like this will be interpreted as relative to "app" dir
-      ]
+                    //, "src/main/JniLibs/boost" // could add additional dirs (with ABI subdirs) to be packaged into apk like this.
+                    // Relative paths like this will be interpreted as relative to "app" dir
+            ]
+        }
     }
-  }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    productFlavors {
+    }
 }
 
 
 dependencies {
-
-
     implementation deps.constraint_layout
     implementation deps.support.app_compat
     implementation deps.support.recyclerview
@@ -121,7 +121,7 @@ dependencies {
     implementation deps.retrofit.runtime
     implementation deps.retrofit.gson
     //@todo
-    compile 'com.squareup.okhttp3:okhttp:3.2.0'
+    implementation 'com.squareup.okhttp3:okhttp:3.2.0'
     implementation deps.okhttp_logging_interceptor
     kapt deps.glide.compiler
     implementation deps.glide.runtime
@@ -129,32 +129,26 @@ dependencies {
     // implementation 'com.squareup.picasso:picasso:2.4.0'
     // compile 'com.squareup.okhttp3:okhttp:3.2.0'
     // compile 'com.jakewharton.picasso:picasso2-okhttp3-downloader:1.1.0'
-
-
     implementation deps.dagger.runtime
     implementation deps.dagger.android
     implementation deps.dagger.android_support
     kapt deps.dagger.android_support_compiler
     kapt deps.dagger.compiler
-
     // Android Testing Support Library's runner and rules
     androidTestImplementation deps.atsl.runner
     androidTestImplementation deps.atsl.rules
     androidTestImplementation deps.arch_core.testing
     testImplementation deps.room.testing
-
     androidTestImplementation deps.junit
     androidTestImplementation deps.retrofit.mock
     androidTestImplementation deps.arch_core.testing
     androidTestImplementation deps.dexmaker
     androidTestImplementation deps.mockito.core, { exclude group: 'net.bytebuddy' }
-
-
-
     testImplementation deps.junit
     testImplementation deps.retrofit.mock
     testImplementation deps.arch_core.testing
     testImplementation deps.mockito.core
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:0.25.3'
 }
 //------------------------------------------------------------
 def local_props(key) { // reads ~ value from local.properties file

@@ -7,7 +7,7 @@
 
 branches:
 
-* [hammingWeight] uses a radical approach wrt GC by filtering images first with an int stored in a direct buffer that serves as a bitcount bitset. I am able to match colorized images and some variations in resolution within a hamming distance.  I am working on making it faster, more efficient, and refactoring it into a library.  Amazingly, the NN is working without help from glide, but I need to download a fairly large image to get enough info for a fingerprint that works. 
+* [bitsetCaches] uses a radical approach wrt GC by caching ids and hashes in a direct buffer that serves as a bitset. I am able to match colorized images and some variations in resolution within a hamming distance of 3. I also reduced the search for similar images to within +/- 1 of the population count of the hash. I am working on making it faster, more efficient, and refactoring it into a library. Amazingly, the NN is working without help from glide, but I need to download a fairly large image to get enough info for a fingerprint that works.
 
 * [master] soon will merge hammingWeight and move on to a higher quality downscale
 

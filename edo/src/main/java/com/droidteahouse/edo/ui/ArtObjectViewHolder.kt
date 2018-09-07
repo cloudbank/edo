@@ -25,17 +25,18 @@ import android.widget.TextView
 import com.droidteahouse.edo.GlideRequests
 import com.droidteahouse.edo.R
 import com.droidteahouse.edo.vo.ArtObject
+import kotlinx.android.synthetic.main.art_object_item.view.*
 
 
 /**
  */
 class ArtObjectViewHolder(view: View, private val glide: GlideRequests)
     : RecyclerView.ViewHolder(view) {
-    private val title: TextView = view.findViewById(R.id.title)
-    private val name: TextView = view.findViewById(R.id.name)
-    //private val date: TextView = view.findViewById(R.id.date)
-    internal val thumbnail: ImageView = view.findViewById(R.id.thumbnail)
-    private val objectid: TextView = view.findViewById(R.id.objectid)
+    private val title: TextView = view.title
+    private val name: TextView = view.name
+    //private val date: TextView = view.date
+    private val thumbnail: ImageView = view.thumbnail
+    private val objectid: TextView = view.objectid
     // private var artObject: ArtObject? = null
 
 
@@ -53,11 +54,11 @@ class ArtObjectViewHolder(view: View, private val glide: GlideRequests)
     fun bind(art: ArtObject?) {
         //this.artObject = art
         title.text = art?.title?.trim() ?: "---"
-        name.text = if (art?.people!!.isNotEmpty()) art.people.get(0).name.trim() else ""
+        name.text = if (art?.people != null && art.people.isNotEmpty()) art.people.get(0).name.trim() else ""
         //medium.text = art?.medium?.trim() ?: "---"
         // date.text = art?.date ?: "[no date listed]"
-        objectid.text = "No." + art.objectid
-        glide.load(art.url)
+        objectid.text = "No." + art?.objectid
+        glide.load(art?.url)
                 .centerCrop()
                 .placeholder(R.drawable.ic_insert_photo_black_48dp)
                 .into(thumbnail)
