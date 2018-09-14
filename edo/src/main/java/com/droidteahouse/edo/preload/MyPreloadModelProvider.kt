@@ -201,43 +201,45 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
     @RequiresApi(Build.VERSION_CODES.KITKAT)
     override suspend fun hashImage(requestBuilder: RequestBuilder<Any>, item: ArtObject) {
         // val job = launch(stcContext) {
-            val start = System.nanoTime()
-            try {
-                //@todo do we need weakref here for target see RequestTracker, not include in cache as bitmap
-                var bmd = requestBuilder.submit().get() as BitmapDrawable
+        val start = System.nanoTime()
+        try {
+            //@todo do we need weakref here for target see RequestTracker, not include in cache as bitmap
+            var bmd = requestBuilder.submit().get() as BitmapDrawable
 
-                var b = bmd.bitmap
-                //bitmap pool?  work on freeing memory here
-                val width = b.width
-                val height = b.height
+            var b = bmd.bitmap
+            //bitmap pool?  work on freeing memory here
+            val width = b.width
+            val height = b.height
 
-                var bb = ByteBuffer.allocateDirect((width * height) * 4)
-                bb.order(ByteOrder.nativeOrder())
-                b.copyPixelsToBuffer(bb)
-                bb.rewind()
-                var ib = bb.asIntBuffer()
-                var hash = nativeDhash(ib, 9, 8, width, height)
-                hash = hash and 0xFFFFFFFF
-                val bc = Util.bitCount(hash)
-                bb = null
-                ib = null
+            var bb = ByteBuffer.allocateDirect((width * height) * 4)
+            bb.order(ByteOrder.nativeOrder())
+            b.copyPixelsToBuffer(bb)
+            bb.rewind()
+            var ib = bb.asIntBuffer()
+            var hash = nativeDhash(ib, 9, 8, width, height)
+            hash = hash and 0xFFFFFFFF
+            val bc = Util.bitCount(hash)
+            bb = null
+            ib = null
 
-                Log.d("MyPreloadModelProvider", "hash" + item.objectid + "***" + item.id + " :: " + hash)
-                if (Cache.hasHash(bc, hash) || nearDuplicate(bc, hash)) {
-                    artViewModel.delete(item)
-                    Log.d("MyPreloadModelProvider", "****found duplicate" + item.id + " :: " + hash.toString() + ";;" + item.objectid)
-                }
-                setBitsAndHash(bc, hash)
-
-                Log.d("MyPreloadModelProvider", "hash" + item.objectid + "***" + item.id + " :: " + hash.toString() + ":::time::" + (System.nanoTime() - start).toString() + "--" + bc.toString())
-            } catch (e: Exception) {
-                // java.net.SocketTimeoutException(timeout)
-                Log.e("MyPreloadModelProvider", "exception" + e + item.id + ":::")
-                // artViewModel.delete(item)
-                Cache.companionContext.cancel()
-
-
+            Log.d("MyPreloadModelProvider", "hash" + item.objectid + "***" + item.id + " :: " + hash)
+            if (Cache.hasHash(bc, hash)) {
+                artViewModel.delete(item)
+                Log.d("MyPreloadModelProvider", "****found exact duplicate" + item.id + " :: " + hash.toString() + ";;" + item.objectid)
+            } else if (nearDuplicate(bc, hash)) {
+                artViewModel.delete(item)
+                Log.d("MyPreloadModelProvider", "****found near duplicate" + item.id + " :: " + hash.toString() + ";;" + item.objectid)
             }
+            setBitsAndHash(bc, hash)
+            Log.d("MyPreloadModelProvider", "hash" + item.objectid + "***" + item.id + " :: " + hash.toString() + ":::time::" + (System.nanoTime() - start).div(1_000_000_000F).toFloat().toString() + "--" + bc.toString())
+        } catch (e: Exception) {
+            // java.net.SocketTimeoutException(timeout)
+            Log.e("MyPreloadModelProvider", "exception" + e + item.id + ":::")
+            // artViewModel.delete(item)
+            Cache.companionContext.cancel()
+
+
+        }
         // }
 
     }
@@ -267,6 +269,10 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
 
         return false
     }
+
+
+    //@todo try without nsative again
+
 
     fun cleanUp() {
         Cache.companionContext.close()

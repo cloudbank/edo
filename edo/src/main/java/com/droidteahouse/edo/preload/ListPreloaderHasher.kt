@@ -9,7 +9,7 @@ import com.bumptech.glide.request.transition.Transition
 import com.bumptech.glide.util.Synthetic
 import com.bumptech.glide.util.Util
 import com.droidteahouse.edo.vo.ArtObject
-import kotlinx.coroutines.experimental.GlobalScope
+import kotlinx.coroutines.experimental.CoroutineScope
 import kotlinx.coroutines.experimental.launch
 import java.util.*
 
@@ -139,9 +139,9 @@ class ListPreloaderHasher<T>
                 ?: return
         val id = (item as ArtObject).id
 //@todo test vs default dispatch
-        GlobalScope.launch(MyPreloadModelProvider.Cache.companionContext, CoroutineStart.DEFAULT, null, {
+        CoroutineScope(MyPreloadModelProvider.Cache.companionContext).launch {
             preloadModelProvider.check(id, item as ArtObject, preloadRequestBuilder)
-        })
+        }
         preloadRequestBuilder.into(preloadTargetQueue.next(dimensions[0], dimensions[1]))
 
     }

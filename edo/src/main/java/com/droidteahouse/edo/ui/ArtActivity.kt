@@ -40,8 +40,7 @@ import com.droidteahouse.edo.vo.ArtObject
 import dagger.android.support.DaggerAppCompatActivity
 import io.paperdb.Paper
 import kotlinx.android.synthetic.main.activity_art.*
-import kotlinx.coroutines.experimental.CoroutineStart
-import kotlinx.coroutines.experimental.GlobalScope
+import kotlinx.coroutines.experimental.CoroutineScope
 import kotlinx.coroutines.experimental.ThreadPoolDispatcher
 import kotlinx.coroutines.experimental.launch
 import javax.inject.Inject
@@ -128,7 +127,7 @@ class ArtActivity : DaggerAppCompatActivity() {
 
                 //@todo  needs generalization and onsavedinstancestate for reclaim w small list SSOT db
                 if (it?.size?.compareTo(0)!! > 0) {
-                    GlobalScope.launch(stcContext, CoroutineStart.DEFAULT, null, {
+                    CoroutineScope(stcContext).launch {
                         if (!Paper.book().contains("hashVisible")) {
 
                             launch(stcContext) {
@@ -141,7 +140,7 @@ class ArtActivity : DaggerAppCompatActivity() {
                             }
 
                         }
-                    })
+                    }
 
                     adapter.submitList(it)
                     modelProvider.objects = it.toMutableList()
@@ -170,14 +169,14 @@ class ArtActivity : DaggerAppCompatActivity() {
                 }
             }*/
             if (Paper.book().contains("ids") && MyPreloadModelProvider.Cache.idcache[0] == 0) {
-                GlobalScope.launch(stcContext, CoroutineStart.DEFAULT, null, {
+                CoroutineScope(stcContext).launch {
                     MyPreloadModelProvider.Cache.idcache = Paper.book().read("ids")
-                })
+                }
             }
             if (Paper.book().contains("hashes") && MyPreloadModelProvider.Cache.hashcache.isEmpty()) {
-                GlobalScope.launch(stcContext, CoroutineStart.DEFAULT, null, {
+                CoroutineScope(stcContext).launch {
                     MyPreloadModelProvider.Cache.hashcache = Paper.book().read("hashes")
-                })
+                }
             }
 
         }
@@ -211,14 +210,14 @@ class ArtActivity : DaggerAppCompatActivity() {
             }
         }*/
         if (MyPreloadModelProvider.Cache.idcache[0] != 0) {
-            GlobalScope.launch(stcContext, CoroutineStart.DEFAULT, null, {
+            CoroutineScope(stcContext).launch {
                 Paper.book().write("ids", MyPreloadModelProvider.Cache.idcache)
-            })
+            }
         }
         if (!MyPreloadModelProvider.Cache.hashcache.isEmpty()) {
-            GlobalScope.launch(stcContext, CoroutineStart.DEFAULT, null, {
+            CoroutineScope(stcContext).launch {
                 Paper.book().write("hashes", MyPreloadModelProvider.Cache.hashcache)
-            })
+            }
         }
 
 

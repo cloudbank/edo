@@ -25,12 +25,12 @@ apply plugin: 'kotlin-kapt'
 
 
 android {
-    compileSdkVersion 27
-    buildToolsVersion '27.0.3'
+    compileSdkVersion 28
+    buildToolsVersion '28.0.2'
     defaultConfig {
         applicationId "com.droidteahouse.edo"
         minSdkVersion  14
-        targetSdkVersion 27
+        targetSdkVersion 28
         versionCode 12
         versionName "1.12"
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
@@ -59,15 +59,15 @@ android {
     buildTypes {
         debug {
             minifyEnabled true
-            useProguard false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'),
+            useProguard true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
                     'proguard-rules.pro'
-            proguardFile '/Users/sgv/Downloads/edo/edo/proguard-rules.pro'
+            proguardFile 'proguard-rules.pro'
         }
         release {
             minifyEnabled true
             useProguard true
-            proguardFiles getDefaultProguardFile('proguard-android.txt'),
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
                     'proguard-rules.pro'
         }
     }
@@ -148,7 +148,13 @@ dependencies {
     testImplementation deps.retrofit.mock
     testImplementation deps.arch_core.testing
     testImplementation deps.mockito.core
-    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:0.25.3'
+    testImplementation deps.mockito.kotlin
+    testImplementation deps.mockito.inline
+    testImplementation deps.kotlin.test
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.26.0'
+    implementation 'io.paperdb:paperdb:2.6'
+
+
 }
 //------------------------------------------------------------
 def local_props(key) { // reads ~ value from local.properties file

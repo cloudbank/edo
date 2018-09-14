@@ -1,7 +1,7 @@
 #include <jni.h>
 
 
-/**3 stepsisters algo
+/**3SS
  * scales the image using the fastest, simplest algorithm called "nearest neighbor, greyscales,
  * and fingerprints all in one*/
 extern "C" JNIEXPORT jlong JNICALL
