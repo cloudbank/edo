@@ -109,11 +109,7 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
         @Volatile
         var hashcache = ArrayMap<Int, HashSet<Long>>(4000 shr 5)
 
-        @RequiresApi(Build.VERSION_CODES.KITKAT)
-        //@todo what for 14-18
-        fun getHashCache(): ArrayMap<Int, HashSet<Long>> {
-            return Paper.book().read("hashes", (ArrayMap<Int, HashSet<Long>>(4000 shr 5)))
-        }
+
 
         @RequiresApi(Build.VERSION_CODES.KITKAT)
         fun putHashInCache(bc: Int, hash: Long) {
@@ -138,6 +134,7 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
 
         @RequiresApi(Build.VERSION_CODES.KITKAT)
         fun checkHashCache(): Unit {
+            //@todo fix
             if (hashcache.isEmpty()) {
                 //  launch(companionContext) {
                 hashcache = Paper.book().read("hashes", (ArrayMap<Int, HashSet<Long>>(4000 shr 5)))
@@ -147,13 +144,11 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
 
 
         private fun fetchHash(bc: Int, hash: Long): Boolean {
-            var result: Boolean = false
             if (!hashcache.contains(bc)) {
-                result = false
-            } else if (hashcache.get(bc) != null && hashcache.get(bc)!!.contains(hash)) {
-                result = true
+                return false
+            } else {
+                return (hashcache.get(bc))!!.contains(hash)
             }
-            return result
         }
 
         private fun stashHash(bc: Int, hash: Long): Unit {
@@ -272,6 +267,5 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
         Cache.companionContext.close()
     }
 }
-
 
 
