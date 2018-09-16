@@ -52,14 +52,14 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
         var idcache = IntArray((4000 shr 5))   //125
 
         fun stashVisible(list: IntArray) {
-            GlobalScope.launch(companionContext, CoroutineStart.DEFAULT, null, {
+            CoroutineScope(companionContext).launch {
                 for (i in list) {
                     stashId(i)
                 }
-            })
-            GlobalScope.launch(companionContext, CoroutineStart.DEFAULT, null, {
+            }
+            CoroutineScope(companionContext).launch {
                 Paper.book().write("ids", idcache)
-            })
+            }
 
 
         }
@@ -70,12 +70,12 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
             //     idcache = getIdCache()
             // }
             //@todo want these in parallel
-            GlobalScope.launch(companionContext, CoroutineStart.DEFAULT, null, {
+            CoroutineScope(companionContext).launch {
                 stashId(id)
-            })
-            GlobalScope.launch(companionContext, CoroutineStart.DEFAULT, null, {
+            }
+            CoroutineScope(companionContext).launch {
                 Paper.book().write("ids", idcache)
-            })
+            }
 
         }
 
@@ -87,7 +87,7 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
         }
 
         suspend fun getIdCache(): IntArray {
-            return GlobalScope.async(companionContext, CoroutineStart.DEFAULT, null, { Paper.book().read("ids", (IntArray(4000 shr 5))) }).await()
+            return CoroutineScope(companionContext).async { Paper.book().read("ids", (IntArray(4000 shr 5))) }.await()
         }
 
 
@@ -223,14 +223,12 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
             ib = null
 
             Log.d("MyPreloadModelProvider", "hash" + item.objectid + "***" + item.id + " :: " + hash)
-            if (Cache.hasHash(bc, hash)) {
+            if (Cache.hasHash(bc, hash) || nearDuplicate(bc, hash)) {
                 artViewModel.delete(item)
-                Log.d("MyPreloadModelProvider", "****found exact duplicate" + item.id + " :: " + hash.toString() + ";;" + item.objectid)
-            } else if (nearDuplicate(bc, hash)) {
-                artViewModel.delete(item)
-                Log.d("MyPreloadModelProvider", "****found near duplicate" + item.id + " :: " + hash.toString() + ";;" + item.objectid)
+                Log.d("MyPreloadModelProvider", "****found duplicate" + item.id + " :: " + hash.toString() + ";;" + item.objectid)
             }
             setBitsAndHash(bc, hash)
+
             Log.d("MyPreloadModelProvider", "hash" + item.objectid + "***" + item.id + " :: " + hash.toString() + ":::time::" + (System.nanoTime() - start).div(1_000_000_000F).toFloat().toString() + "--" + bc.toString())
         } catch (e: Exception) {
             // java.net.SocketTimeoutException(timeout)
@@ -269,10 +267,6 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
 
         return false
     }
-
-
-    //@todo try without nsative again
-
 
     fun cleanUp() {
         Cache.companionContext.close()
