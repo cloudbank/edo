@@ -70,6 +70,8 @@
 -keep class com.google.gson.stream.** { *; }
 -keepclassmembers class com.teahouse.gists.vo.** { <fields>; }
 
+#Warning: org.objenesis.instantiator.sun.UnsafeFactoryInstantiator: can't find referenced class sun.misc.Unsafe
+-dontwarn org.objenesis.instantiator.sun.UnsafeFactoryInstantiator.**
 
 #dagger
 -dontwarn com.google.errorprone.annotations.**
@@ -82,6 +84,30 @@
   **[] $VALUES;
   public *;
 }
+
+#paper
+-keep class sun.misc.Unsafe { *; }
+-keep class io.paperdb.** { *; }
+-keep class com.esotericsoftware.** { *; }
+-dontwarn com.esotericsoftware.**
+-keep class de.javakaffee.kryoserializers.** { *; }
+-dontwarn de.javakaffee.kryoserializers.**
+
+
+#kryo
+-dontwarn sun.reflect.**
+-dontwarn java.beans.**
+-keep,allowshrinking class com.esotericsoftware.** {
+       <fields>;
+       <methods>;
+    }
+-keep,allowshrinking class java.beans.** { *; }
+-keep,allowshrinking class sun.reflect.** { *; }
+-keep,allowshrinking class com.esotericsoftware.kryo.** { *; }
+-keep,allowshrinking class com.esotericsoftware.kryo.io.** { *; }
+-keep,allowshrinking class sun.nio.ch.** { *; }
+-dontwarn sun.nio.ch.**
+-dontwarn sun.misc.**
 
 #coroutines
 -keepclassmembernames class kotlinx.** {
