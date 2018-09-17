@@ -5,7 +5,6 @@ import android.content.Context
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
-import android.support.annotation.RequiresApi
 import android.util.ArrayMap
 import android.util.Log
 import com.bumptech.glide.RequestBuilder
@@ -23,6 +22,7 @@ import java.nio.ByteOrder
 import java.util.*
 import javax.inject.Inject
 import javax.inject.Singleton
+import kotlin.collections.HashMap
 
 @Singleton
 class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var artViewModel: ArtViewModel) : PreloadModelProvider<T> {
@@ -32,12 +32,13 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
 
     external fun nativeDhash(b: Buffer, nw: Int, nh: Int, ow: Int, oh: Int): Long
 
-    @RequiresApi(Build.VERSION_CODES.KITKAT)
+
     override suspend fun check(id: Int, item: ArtObject, preloadRequestBuilder: RequestBuilder<Any>) {
 
         if (!Cache.hasId(id)) {
             Log.d("HASHER", "MyPreloadModelProvider id not in cache:::" + id)
             Cache.putIdInCache(id)
+
             hashImage(preloadRequestBuilder, item)
         }
 
@@ -104,14 +105,17 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
         }
 
         ///--------------------hashes
-        @RequiresApi(Build.VERSION_CODES.KITKAT)
+
         //@todo what for 14-18
         @Volatile
-        var hashcache = ArrayMap<Int, HashSet<Long>>(4000 shr 5)
+
+        var hashcache = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
+            ArrayMap<Int, HashSet<Long>>(32 * 4000 + 32 * 32) //.1MB
+        } else {
+            HashMap<Int, HashSet<Long>>(32 * 4000 + 32 * 32)
+        }
 
 
-
-        @RequiresApi(Build.VERSION_CODES.KITKAT)
         fun putHashInCache(bc: Int, hash: Long) {
             //@todo want these in parallel
             //  if (hashcache.isEmpty()) {
@@ -126,13 +130,12 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
         }
 
 
-        @RequiresApi(Build.VERSION_CODES.KITKAT)
         fun hasHash(bc: Int, hash: Long): Boolean {
             checkHashCache()
             return fetchHash(bc, hash)
         }
 
-        @RequiresApi(Build.VERSION_CODES.KITKAT)
+
         fun checkHashCache(): Unit {
             //@todo fix
             if (hashcache.isEmpty()) {
@@ -163,8 +166,8 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
         }
     }
 
-    @RequiresApi(Build.VERSION_CODES.KITKAT)
-//called from bg thread in activity
+
+    //called from bg thread in activity
     suspend fun hashVisible(sublist: List<ArtObject>): Unit {
         //has the first 3
         MyPreloadModelProvider.Cache.stashVisible(sublist.map { it.id }.toIntArray())
@@ -193,7 +196,7 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
     }
 
     //called from bg thread in either listhasher or activity
-    @RequiresApi(Build.VERSION_CODES.KITKAT)
+
     override suspend fun hashImage(requestBuilder: RequestBuilder<Any>, item: ArtObject) {
         // val job = launch(stcContext) {
         val start = System.nanoTime()
@@ -218,9 +221,12 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
             ib = null
 
             Log.d("MyPreloadModelProvider", "hash" + item.objectid + "***" + item.id + " :: " + hash)
-            if (Cache.hasHash(bc, hash) || nearDuplicate(bc, hash)) {
+            if (Cache.hasHash(bc, hash)) {
                 artViewModel.delete(item)
-                Log.d("MyPreloadModelProvider", "****found duplicate" + item.id + " :: " + hash.toString() + ";;" + item.objectid)
+                Log.d("MyPreloadModelProvider", "****found exact duplicate" + item.id + " :: " + hash.toString() + ";;" + item.objectid)
+            } else if (nearDuplicate(bc, hash)) {
+                artViewModel.delete(item)
+                Log.d("MyPreloadModelProvider", "****found near duplicate" + item.id + " :: " + hash.toString() + ";;" + item.objectid)
             }
             setBitsAndHash(bc, hash)
 
@@ -228,7 +234,7 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
         } catch (e: Exception) {
             // java.net.SocketTimeoutException(timeout)
             Log.e("MyPreloadModelProvider", "exception" + e + item.id + ":::")
-            // artViewModel.delete(item)
+            // artViewModel.delete(item)//no photo, js
             Cache.companionContext.cancel()
 
 
@@ -238,7 +244,6 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
     }
 
 
-    @RequiresApi(Build.VERSION_CODES.KITKAT)
     suspend fun setBitsAndHash(bc: Int, hash: Long) {
         // MyPreloadModelProvider.putBits(1 shl (bc - 1))
         Cache.putHashInCache(bc, hash)

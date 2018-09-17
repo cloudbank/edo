@@ -22,9 +22,7 @@ import android.arch.lifecycle.Observer
 import android.arch.lifecycle.ViewModelProvider
 import android.arch.lifecycle.ViewModelProviders
 import android.arch.paging.PagedList
-import android.os.Build
 import android.os.Bundle
-import android.support.annotation.RequiresApi
 import android.support.v4.content.ContextCompat
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
@@ -68,7 +66,7 @@ class ArtActivity : DaggerAppCompatActivity() {
     var onsavedstate = false
 
     private var mLayoutManager: LinearLayoutManager? = null
-    @RequiresApi(Build.VERSION_CODES.KITKAT)
+
     override fun onCreate(savedInstanceState: Bundle?) {
 
         super.onCreate(savedInstanceState)
@@ -104,7 +102,7 @@ class ArtActivity : DaggerAppCompatActivity() {
         Paper.book().write("hashes", MyPreloadModelProvider.Cache.hashcache)
     }
 
-    @RequiresApi(Build.VERSION_CODES.KITKAT)
+
     private fun createViews() {
         toolbar.setTitleTextColor(resources.getColor(R.color.colorPrimary))
         setSupportActionBar(toolbar)

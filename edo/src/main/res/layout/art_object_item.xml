@@ -14,6 +14,8 @@
   ~ limitations under the License.
   -->
 <android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
@@ -27,28 +29,42 @@
 
         <TextView
             android:id="@+id/objectid"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
+            android:layout_width="106dp"
+            android:layout_height="49dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="24dp"
             android:background="@drawable/image_border"
-            android:gravity="left"
+            android:gravity="center"
             android:minLines="1"
             android:padding="12dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintVertical_bias="0.0"
             tools:text="Id goes here" />
 
 
         <TextView
             android:id="@+id/title"
-            android:layout_width="272dp"
-            android:layout_height="50dp"
+            android:layout_width="269dp"
+            android:layout_height="65dp"
+            android:layout_marginBottom="1dp"
+            android:layout_marginEnd="56dp"
+            android:layout_marginLeft="56dp"
+            android:layout_marginRight="56dp"
+            android:layout_marginStart="56dp"
+            android:layout_marginTop="70dp"
             android:ellipsize="end"
-            android:gravity="center"
+            android:gravity="center_vertical|center_horizontal"
             android:minLines="4"
-            app:layout_constraintLeft_toRightOf="@id/objectid"
+            android:padding="2dp"
+            app:layout_constraintBottom_toTopOf="@+id/thumbnail"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/space"
             tools:text="Beautiful Art with many lines of nonsense text" />
 
 
@@ -56,26 +72,30 @@
             android:id="@+id/thumbnail"
             android:layout_width="55dp"
             android:layout_height="55dp"
+            android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
             android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
+            android:layout_marginTop="2dp"
             android:background="@drawable/image_border2"
             android:scaleType="centerInside"
+            app:layout_constraintBottom_toTopOf="@+id/name"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/title" />
+            app:layout_constraintTop_toBottomOf="@+id/title" />
 
 
         <TextView
             android:id="@+id/name"
             android:layout_width="272dp"
             android:layout_height="50dp"
+            android:layout_marginTop="8dp"
             android:gravity="center_horizontal|center_vertical"
             android:minLines="3"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/thumbnail"
+            app:layout_constraintVertical_bias="0.578"
             tools:text="this is  medium text\n and might be multiple lines" />
 
 
