@@ -214,7 +214,7 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
     override fun hashImage(requestBuilder: RequestBuilder<Any>, item: ArtObject) {
         lateinit var job: Job
 
-        CoroutineScope(Dispatchers.Default).launch {
+        //CoroutineScope(Dispatchers.Default).launch {
             //hashExec.execute {
             android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
             val start = System.nanoTime()
@@ -241,7 +241,7 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
                 ib = null
 
                 //Log.d("MyPreloadModelProvider", "hash" + item.objectid + "***" + item.id + " :: " + hash)
-                job = CoroutineScope(Cache.companionContext).launch {
+                //job = CoroutineScope(Cache.companionContext).launch {
                     android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
                     //synchronized(this) {
                     if (Cache.hasHash(bc, hash) != null && Cache.hasHash(bc, hash)!!) {
@@ -254,17 +254,17 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
                     setBitsAndHash(bc, hash)
                     //}
                     Log.d("MyPreloadModelProvider", "hash" + item.objectid + "***" + item.id + " :: " + hash.toString() + ":::time::" + (System.nanoTime() - start).div(1_000_000_000F).toFloat().toString() + "--" + bc.toString())
-                }
+                // }
             } catch (e: Exception) {
                 // java.net.SocketTimeoutException(timeout)
                 Log.e("MyPreloadModelProvider", "exception" + e + item.id + ":::")
                 // artViewModel.delete(item)//no photo, js
                 // Cache.companionContext.cancel()
-                job.cancel()
+                Cache.companionContext.cancel()
                 // //return@execute
 
             }
-        }
+        // }
         // }
 
 

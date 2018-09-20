@@ -37,6 +37,7 @@ class ArtObjectViewHolder(view: View, private val glide: GlideRequests)
     //private val date: TextView = view.date
     private val thumbnail: ImageView = view.thumbnail
     private val objectid: TextView = view.objectid
+    private val id: TextView = view.oid
     // private var artObject: ArtObject? = null
 
 
@@ -58,6 +59,7 @@ class ArtObjectViewHolder(view: View, private val glide: GlideRequests)
         //medium.text = art?.medium?.trim() ?: "---"
         // date.text = art?.date ?: "[no date listed]"
         objectid.text = "No." + art?.objectid
+        id.text = art?.id.toString()
         glide.load(art?.url)
                 .centerCrop()
                 .placeholder(R.drawable.ic_insert_photo_black_48dp)

@@ -39,7 +39,6 @@ import dagger.android.support.DaggerAppCompatActivity
 import io.paperdb.Paper
 import kotlinx.android.synthetic.main.activity_art.*
 import kotlinx.coroutines.experimental.CoroutineScope
-import kotlinx.coroutines.experimental.GlobalScope
 import kotlinx.coroutines.experimental.ThreadPoolDispatcher
 import kotlinx.coroutines.experimental.launch
 import javax.inject.Inject
@@ -121,35 +120,39 @@ class ArtActivity : DaggerAppCompatActivity() {
                 glide, modelProvider, FixedPreloadSizeProvider(55, 55), 10)
 
         rvArt?.addOnScrollListener(preloader)
-        if (artViewModel.artObjects.value?.size?.compareTo(0) !== 0) { //avoid 0 size onstart PR
-            artViewModel.artObjects.observe(this, Observer<PagedList<ArtObject>> {
+        artViewModel.artObjects.observe(this, Observer<PagedList<ArtObject>> {
+            if (artViewModel.artObjects.value?.size?.compareTo(0) !== 0) { //avoid 0 size onstart PR
 
                 //@todo  needs generalization and onsavedinstancestate for reclaim w small list SSOT db
-                if (it?.size?.compareTo(0)!! > 0) {
-                    //CoroutineScope(stcContext).launch {
-                    if (!Paper.book().contains("hashVisible")) {
+                //if (it?.size?.compareTo(0)!! > 0) {
+                //CoroutineScope(stcContext).launch {
+                if (!Paper.book().contains("hashVisible")) {
 
-                        GlobalScope.launch(stcContext, CoroutineStart.DEFAULT, null, {
-                            Paper.book().write("hashVisible", true)
-                        })
-                        //CoroutineScope(MyPreloadModelProvider.Cache.companionContext).launch {
-                        modelProvider.hashVisible(it.subList(0, 4))
-                        // }
-                        //runOnUiThread {
-                        setTheme(R.style.AppTheme)
-                        //}
 
+                    Paper.book().write("hashVisible", true)
+
+                    CoroutineScope(MyPreloadModelProvider.Cache.companionContext).launch {
+                        modelProvider.hashVisible(it!!.subList(0, 4))
                     }
-                    // }
-
-                    adapter.submitList(it)
-                    modelProvider.objects = it.toMutableList()
+                    //runOnUiThread {
+                    setTheme(R.style.AppTheme)
+                    //}
 
                 }
-            })
-        }
+                // }
+//do I have to do a manual diff for paged list before 26?
+                Log.d(".0artobject", ":::" + it?.get(0) + it?.size)
+                adapter.submitList(it)
+                modelProvider.objects = it?.toMutableList()
 
-        rvArt?.smoothScrollToPosition(0)
+                //}
+
+
+            }
+
+        })
+
+        //rvArt?.smoothScrollToPosition(0)
         artViewModel.networkState.observe(this, Observer
         {
             adapter.setNetworkState(it)

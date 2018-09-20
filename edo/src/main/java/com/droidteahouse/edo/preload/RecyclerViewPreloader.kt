@@ -50,7 +50,7 @@ class RecyclerViewPreloader<T>
         recyclerScrollListener = RecyclerToListViewScrollListener(listPreloader)
     }
 
-    override fun onScrolled(recyclerView: RecyclerView?, dx: Int, dy: Int) {
+    override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
         recyclerScrollListener.onScrolled(recyclerView, dx, dy)
     }
 }
