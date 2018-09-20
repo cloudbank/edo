@@ -39,6 +39,7 @@ import dagger.android.support.DaggerAppCompatActivity
 import io.paperdb.Paper
 import kotlinx.android.synthetic.main.activity_art.*
 import kotlinx.coroutines.experimental.CoroutineScope
+import kotlinx.coroutines.experimental.GlobalScope
 import kotlinx.coroutines.experimental.ThreadPoolDispatcher
 import kotlinx.coroutines.experimental.launch
 import javax.inject.Inject
@@ -60,7 +61,7 @@ class ArtActivity : DaggerAppCompatActivity() {
 
     //@todo instead of injection, use Cache stc ctx?
     @Inject
-    @field:Named("stc")
+    @field:Named("activity")
     lateinit var stcContext: ThreadPoolDispatcher
 
     var onsavedstate = false
@@ -125,20 +126,21 @@ class ArtActivity : DaggerAppCompatActivity() {
 
                 //@todo  needs generalization and onsavedinstancestate for reclaim w small list SSOT db
                 if (it?.size?.compareTo(0)!! > 0) {
-                    CoroutineScope(stcContext).launch {
-                        if (!Paper.book().contains("hashVisible")) {
+                    //CoroutineScope(stcContext).launch {
+                    if (!Paper.book().contains("hashVisible")) {
 
-                            launch(stcContext) {
-                                Paper.book().write("hashVisible", true)
-                            }
+                        GlobalScope.launch(stcContext, CoroutineStart.DEFAULT, null, {
+                            Paper.book().write("hashVisible", true)
+                        })
+                        //CoroutineScope(MyPreloadModelProvider.Cache.companionContext).launch {
+                        modelProvider.hashVisible(it.subList(0, 4))
+                        // }
+                        //runOnUiThread {
+                        setTheme(R.style.AppTheme)
+                        //}
 
-                            modelProvider.hashVisible(it.subList(0, 4))
-                            runOnUiThread {
-                                setTheme(R.style.AppTheme)
-                            }
-
-                        }
                     }
+                    // }
 
                     adapter.submitList(it)
                     modelProvider.objects = it.toMutableList()

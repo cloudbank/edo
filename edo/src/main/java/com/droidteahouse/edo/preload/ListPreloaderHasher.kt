@@ -1,5 +1,6 @@
 package com.droidteahouse.edo.preload
 
+import android.util.Log
 import android.widget.AbsListView
 import com.bumptech.glide.RequestBuilder
 import com.bumptech.glide.RequestManager
@@ -115,7 +116,6 @@ class ListPreloaderHasher<T>
 
     private fun preloadAdapterPosition(items: List<T>, position: Int, isIncreasing: Boolean) {
         val numItems = items.size
-        //here2 hash to its id  --does this happen at ssame time as insert?
         //  Log.d("HASHER", "preloading starting" + items.size());
         if (isIncreasing) {
             for (i in 0 until numItems) {
@@ -138,10 +138,15 @@ class ListPreloaderHasher<T>
         val preloadRequestBuilder = preloadModelProvider.getPreloadRequestBuilder(item) as RequestBuilder<Any>?
                 ?: return
         val id = (item as ArtObject).id
-//@todo test vs default dispatch
+//@todo put on bg thread again
+        Log.d("HASHER", "Loading " + item.id + "::::" + item.objectid)
         CoroutineScope(MyPreloadModelProvider.Cache.companionContext).launch {
-            preloadModelProvider.check(id, item as ArtObject, preloadRequestBuilder)
+            if (!MyPreloadModelProvider.Cache.hasId(item.id)) {
+                MyPreloadModelProvider.Cache.putIdInCache(item.id)
+                preloadModelProvider.hashImage(preloadRequestBuilder, item as ArtObject)
+            }
         }
+
         preloadRequestBuilder.into(preloadTargetQueue.next(dimensions[0], dimensions[1]))
 
     }
@@ -160,8 +165,8 @@ class ListPreloaderHasher<T>
     </U> */
     interface PreloadModelProvider<U> {
 
-        suspend fun check(id: Int, artObject: ArtObject, preloadRequestBuilder: RequestBuilder<Any>)
-        suspend fun hashImage(requestBuilder: RequestBuilder<Any>, item: ArtObject)
+        fun check(id: Int, artObject: ArtObject, preloadRequestBuilder: RequestBuilder<Any>)
+        fun hashImage(requestBuilder: RequestBuilder<Any>, item: ArtObject)
 
         /**
          * Returns a [List] of models that need to be loaded for the list to display adapter items

@@ -30,9 +30,6 @@ import com.droidteahouse.edo.api.ArtAPI
 import com.droidteahouse.edo.util.createStatusLiveData
 import com.droidteahouse.edo.vo.ArtObject
 import com.droidteahouse.edo.vo.EdoObjects
-import kotlinx.coroutines.experimental.CoroutineScope
-import kotlinx.coroutines.experimental.ThreadPoolDispatcher
-import kotlinx.coroutines.experimental.launch
 import retrofit2.Call
 import retrofit2.Callback
 import retrofit2.Response
@@ -53,7 +50,7 @@ import javax.inject.Singleton
 class ArtBoundaryCallback @Inject constructor(
         @Named("repoExec") var ioExecutor: ExecutorService,
         var webservice: ArtAPI,
-        var context: Context, @Named("stc") var stc: ThreadPoolDispatcher)
+        var context: Context/*, @Named("activity")var stc : ThreadPoolDispatcher*/)
     : PagedList.BoundaryCallback<ArtObject>() {
     lateinit var handleResponse: (List<ArtObject>) -> Unit
     val helper = PagingRequestHelper(ioExecutor)
@@ -94,10 +91,10 @@ class ArtBoundaryCallback @Inject constructor(
             it: PagingRequestHelper.Request.Callback) {
 
 
-        // ioExecutor.execute {
+        ioExecutor.execute {
 
-        // android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
-        CoroutineScope(stc).launch {
+            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
+            //CoroutineScope(MyPreloadModelProvider.Cache.companionContext).launch {
             handleResponse(list)
             it.recordSuccess()
             // }
