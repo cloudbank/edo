@@ -141,6 +141,7 @@ class ListPreloaderHasher<T>
 //@todo put on bg thread again
         Log.d("HASHER", "Loading " + item.id + "::::" + item.objectid)
         CoroutineScope(MyPreloadModelProvider.Cache.companionContext).launch {
+            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
             if (!MyPreloadModelProvider.Cache.hasId(item.id)) {
                 MyPreloadModelProvider.Cache.putIdInCache(item.id)
                 preloadModelProvider.hashImage(preloadRequestBuilder, item as ArtObject)

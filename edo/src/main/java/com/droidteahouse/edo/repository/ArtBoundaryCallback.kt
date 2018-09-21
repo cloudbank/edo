@@ -78,7 +78,9 @@ class ArtBoundaryCallback @Inject constructor(
             webservice.japaneseDesign(
                     page = (itemAtEnd.page + 1).toString())
                     //per_page = networkPageSize)
+
                     .enqueue(createWebserviceCallback(it))
+            Log.e("ABCB", "onitematend for page" + itemAtEnd.page + 1 + itemAtEnd.id + "::")
         }
     }
 

@@ -26,6 +26,7 @@ import android.os.Bundle
 import android.support.v4.content.ContextCompat
 import android.support.v7.widget.DividerItemDecoration
 import android.support.v7.widget.LinearLayoutManager
+import android.support.v7.widget.RecyclerView
 import android.util.Log
 import android.view.View
 import com.droidteahouse.edo.GlideApp
@@ -120,6 +121,11 @@ class ArtActivity : DaggerAppCompatActivity() {
                 glide, modelProvider, FixedPreloadSizeProvider(55, 55), 10)
 
         rvArt?.addOnScrollListener(preloader)
+        rvArt?.onFlingListener = (FlingListener())
+        //val helper = LinearSnapHelper()
+        //helper.attachToRecyclerView(rvArt)
+
+
         artViewModel.artObjects.observe(this, Observer<PagedList<ArtObject>> {
             if (artViewModel.artObjects.value?.size?.compareTo(0) !== 0) { //avoid 0 size onstart PR
 
@@ -132,6 +138,7 @@ class ArtActivity : DaggerAppCompatActivity() {
                     Paper.book().write("hashVisible", true)
 
                     CoroutineScope(MyPreloadModelProvider.Cache.companionContext).launch {
+                        android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
                         modelProvider.hashVisible(it!!.subList(0, 4))
                     }
                     //runOnUiThread {
@@ -247,6 +254,19 @@ class ArtActivity : DaggerAppCompatActivity() {
         swipe_refresh.setOnRefreshListener {
             artViewModel.refresh()
         }
+    }
+
+    class FlingListener : RecyclerView.OnFlingListener() {
+        override fun onFling(x: Int, y: Int): Boolean {
+            if (y > 400) {
+                Log.d("fling speed", "fling speed= " + x + "::" + y)
+
+                return true
+            }
+            return false
+        }
+
+
     }
 
 

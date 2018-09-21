@@ -31,14 +31,16 @@
             android:id="@+id/objectid"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
             android:layout_marginEnd="8dp"
+            android:layout_marginRight="8dp"
             android:layout_marginStart="8dp"
             android:layout_marginTop="8dp"
             android:background="@drawable/image_border"
             android:gravity="left"
             android:minLines="1"
             android:padding="12dp"
+            app:layout_constraintEnd_toStartOf="@+id/title"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="Id goes here" />
 
@@ -46,29 +48,36 @@
             android:id="@+id/oid"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="8dp"
-            android:layout_marginEnd="8dp"
-            android:layout_marginStart="8dp"
-            android:layout_marginTop="8dp"
+            android:layout_marginEnd="20dp"
+            android:layout_marginLeft="16dp"
+            android:layout_marginRight="20dp"
+            android:layout_marginStart="16dp"
+            android:layout_marginTop="16dp"
             android:background="@drawable/image_border"
             android:gravity="left"
             android:minLines="1"
             android:padding="12dp"
+            app:layout_constraintEnd_toStartOf="@+id/title"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/objectid"
-            tools:text="Id goes here" />
+            tools:text="4000" />
 
 
         <TextView
             android:id="@+id/title"
             android:layout_width="272dp"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="8dp"
             android:layout_marginTop="4dp"
             android:ellipsize="end"
             android:gravity="left|center"
             android:minLines="4"
+            android:padding="4dp"
             app:layout_constraintLeft_toRightOf="@id/objectid"
             app:layout_constraintTop_toTopOf="parent"
-            tools:text="Beautiful Art with many lines of nonsense text" />
+            tools:text="Beautiful Art with many lines of nonsense text and stuffs
+that extend for many lines because they are highly descriptive and full
+of historical facts about the Edo period" />
 
 
         <ImageView

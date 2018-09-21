@@ -82,6 +82,7 @@ class ArtObjectRepository @Inject constructor(
         list.let { results ->
             //
             db.runInTransaction {
+                android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
 
                 var nextPage = db.artDao().getNextPageInArt()
                 if (nextPage == 0) nextPage = 1
