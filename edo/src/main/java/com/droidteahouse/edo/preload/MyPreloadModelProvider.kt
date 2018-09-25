@@ -20,10 +20,12 @@ import kotlinx.coroutines.experimental.*
 import java.nio.Buffer
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
+import java.nio.IntBuffer
 import java.util.*
-import java.util.concurrent.ExecutorService
+import java.util.concurrent.BlockingQueue
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.TimeUnit
 import javax.inject.Inject
-import javax.inject.Named
 import javax.inject.Singleton
 import kotlin.collections.HashMap
 
@@ -31,9 +33,6 @@ import kotlin.collections.HashMap
 class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var artViewModel: ArtViewModel) : PreloadModelProvider<T> {
     var objects: MutableList<ArtObject>? = mutableListOf()
     //val counterContext = newSingleThreadContext("CounterContext")
-    @Inject
-    @field:Named("hashExec")
-    lateinit var hashExec: ExecutorService
 
     external fun nativeDhash(b: Buffer, nw: Int, nh: Int, ow: Int, oh: Int): Long
 
@@ -54,7 +53,7 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
     companion object Cache {
 
         val companionContext = newSingleThreadContext("cache")
-
+        lateinit var q: BlockingQueue<IntBuffer>
 
         @Volatile
         var idcache = IntArray((4000 shr 5))   //125
@@ -177,6 +176,21 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
 
         init {
             System.loadLibrary("native-lib")
+
+            q = LinkedBlockingQueue<IntBuffer>(400_000)
+            createBBPool()
+
+        }
+
+        //look in collections book
+        //@todo LinkedBlockingQueue LinkedBlockingDeque
+        private fun createBBPool() {
+            for (i in 1..10) {
+                var bb: ByteBuffer
+                bb = ByteBuffer.allocateDirect((10_000) * 4)
+                bb.order(ByteOrder.nativeOrder())
+                q.add(bb.asIntBuffer())
+            }
         }
     }
 
@@ -215,55 +229,68 @@ class MyPreloadModelProvider<T> @Inject constructor(var context: Context, var ar
         lateinit var job: Job
 
         //CoroutineScope(Dispatchers.Default).launch {
-            //hashExec.execute {
-            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
-            val start = System.nanoTime()
-            try {
+        //hashExec.execute {
+        android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
+        val start = System.nanoTime()
+        try {
 
-
-                //@todo do we need weakref here for target see RequestTracker, not include in cache as bitmap
-                var bmd = requestBuilder.submit().get() as BitmapDrawable
-
-                var b = bmd.bitmap
-                //bitmap pool?  work on freeing memory here
-                val width = b.width
-                val height = b.height
-
-                var bb = ByteBuffer.allocateDirect((width * height) * 4)
-                bb.order(ByteOrder.nativeOrder())
-                b.copyPixelsToBuffer(bb)
-                bb.rewind()
-                var ib = bb.asIntBuffer()
-                var hash = nativeDhash(ib, 9, 8, width, height)
-                hash = hash and 0xFFFFFFFF
-                val bc = Util.bitCount(hash)
-                bb = null
-                ib = null
-
-                //Log.d("MyPreloadModelProvider", "hash" + item.objectid + "***" + item.id + " :: " + hash)
-                //job = CoroutineScope(Cache.companionContext).launch {
-                    android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
-                    //synchronized(this) {
-                    if (Cache.hasHash(bc, hash) != null && Cache.hasHash(bc, hash)!!) {
-                        artViewModel.delete(item)
-                        Log.d("MyPreloadModelProvider", "****found exact duplicate" + item.id + " :: " + hash.toString() + ";;" + item.objectid)
-                    } else if (nearDuplicate(bc, hash)) {
-                        artViewModel.delete(item)
-                        Log.d("MyPreloadModelProvider", "****found near duplicate" + item.id + " :: " + hash.toString() + ";;" + item.objectid)
-                    }
-                    setBitsAndHash(bc, hash)
-                    //}
-                    Log.d("MyPreloadModelProvider", "hash" + item.objectid + "***" + item.id + " :: " + hash.toString() + ":::time::" + (System.nanoTime() - start).div(1_000_000_000F).toFloat().toString() + "--" + bc.toString())
-                // }
-            } catch (e: Exception) {
-                // java.net.SocketTimeoutException(timeout)
-                Log.e("MyPreloadModelProvider", "exception" + e + item.id + ":::")
-                // artViewModel.delete(item)//no photo, js
-                // Cache.companionContext.cancel()
-                Cache.companionContext.cancel()
-                // //return@execute
-
+            if (item.id == 26) {
+                Log.d("URL", item.url)
             }
+            //@todo do we need weakref here for target see RequestTracker, not include in cache as bitmap
+            var bmd = requestBuilder.submit().get() as BitmapDrawable
+
+            var b = bmd.bitmap
+            //bitmap pool?  work on freeing memory here
+            val width = b.width
+            val height = b.height
+
+            var bb = q.poll()
+            if (bb == null) {
+                while (q.isEmpty()) {
+
+                }
+                bb = q.poll()
+            }
+            // var bb = ByteBuffer.allocateDirect((width * height) * 4)
+
+            //bb.order(ByteOrder.nativeOrder())
+            b.copyPixelsToBuffer(bb)
+            bb.rewind()
+            //var ib = bb.asIntBuffer()
+            var hash = nativeDhash(bb, 9, 8, width, height)
+            hash = hash and 0xFFFFFFFF
+            val bc = Util.bitCount(hash)
+            //try to eliminate churn
+            bb.clear()
+            q.offer(bb, 2, TimeUnit.SECONDS)
+            // bb = null
+            //ib = null
+
+            //Log.d("MyPreloadModelProvider", "hash" + item.objectid + "***" + item.id + " :: " + hash)
+            //job = CoroutineScope(Cache.companionContext).launch {
+            android.os.Process.setThreadPriority(android.os.Process.THREAD_PRIORITY_BACKGROUND)
+            //synchronized(this) {
+            if (Cache.hasHash(bc, hash) != null && Cache.hasHash(bc, hash)!!) {
+                artViewModel.delete(item)
+                Log.d("MyPreloadModelProvider", "****found exact duplicate" + item.id + " :: " + hash.toString() + ";;" + item.objectid)
+            } else if (nearDuplicate(bc, hash)) {
+                artViewModel.delete(item)
+                Log.d("MyPreloadModelProvider", "****found near duplicate" + item.id + " :: " + hash.toString() + ";;" + item.objectid)
+            }
+            setBitsAndHash(bc, hash)
+            //}
+            Log.d("MyPreloadModelProvider", "hash" + item.objectid + "***" + item.id + " :: " + hash.toString() + ":::time::" + (System.nanoTime() - start).div(1_000_000_000F).toFloat().toString() + "--" + bc.toString())
+            // }
+        } catch (e: Exception) {
+            // java.net.SocketTimeoutException(timeout)
+            Log.e("MyPreloadModelProvider", "exception" + e + item.id + ":::")
+            // artViewModel.delete(item)//no photo, js
+            // Cache.companionContext.cancel()
+            Cache.companionContext.cancel()
+            // //return@execute
+
+        }
         // }
         // }
 

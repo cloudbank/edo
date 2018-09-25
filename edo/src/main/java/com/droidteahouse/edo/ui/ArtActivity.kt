@@ -148,7 +148,9 @@ class ArtActivity : DaggerAppCompatActivity() {
                 }
                 // }
 //do I have to do a manual diff for paged list before 26?
-                Log.d(".0artobject", ":::" + it?.get(0) + it?.size)
+                // Log.d(".0artobject", ":::" + it?.get(0) + it?.size)
+
+
                 adapter.submitList(it)
                 modelProvider.objects = it?.toMutableList()
 

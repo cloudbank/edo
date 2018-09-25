@@ -2,6 +2,7 @@ package com.droidteahouse.edo.preload
 
 
 import android.support.v7.widget.RecyclerView
+import android.util.Log
 import com.bumptech.glide.RequestManager
 import com.bumptech.glide.integration.recyclerview.RecyclerToListViewScrollListener
 import com.droidteahouse.edo.preload.ListPreloaderHasher.PreloadModelProvider
@@ -53,5 +54,12 @@ class RecyclerViewPreloader<T>
     override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
         recyclerScrollListener.onScrolled(recyclerView, dx, dy)
     }
+
+    override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+        Log.d("RecyclerViewPreloader", "onScrollStateChanged " + newState)
+//        recyclerScrollListener.onScrollStateChanged(recyclerView, newState)
+    }
+
+
 }
 

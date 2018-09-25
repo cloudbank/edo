@@ -91,6 +91,7 @@ class ArtObjectRepository @Inject constructor(
                 var items = filtered.map { item ->
                     item.page = nextPage
                     item.url += "?height=100&width=100"
+
                     //item.hash = item.id //init before hash
                     item
                 }.toMutableList()
@@ -121,27 +122,30 @@ class ArtObjectRepository @Inject constructor(
                     clone3.title = "assets1 --original copy  of 3 dupes"
                     //val photoUri = Uri.fromFile(File("file:///android_asset/402004259.jpeg"))
                     clone3.page = nextPage
-                    clone3.url = "file:///android_asset/402004259.jpeg"
+                    clone3.url = "file:///android_asset/402004259_1.jpeg"
                     items.add(0, clone3)
+
 
                     var clone4 = clone2.copy()
                     //clone4.id = 2
                     clone4.title = "assets2 non exact copy of assets1"
                     //val photoUri = Uri.fromFile(File("file:///android_asset/402004259.jpeg"))
                     clone4.page = nextPage
-                    clone4.url = "file:///android_asset/BAA1Nb5.jpg"
+                    clone4.url = "file:///android_asset/402004259_green.png"
                     items.add(1, clone4)
-
+                }
+/*
                     var clone5 = clone2.copy()
                     //clone4.id = 2
                     clone5.title = "assets3 non exact copy of assets1"
                     //val photoUri = Uri.fromFile(File("file:///android_asset/402004259.jpeg"))
                     clone5.page = nextPage
-                    clone5.url = "file:///android_asset/BAA1Nb5222.png"
+                    clone5.url = "file:///android_asset/BAA1Nb5222resize.png"
                     items.add(2, clone5)
 
 
                 }
+                */
                 Log.d("REPO", "items insert starting" + items.size + ";;" + nextPage)
                 //@todo when insert it calls onchange--need to protect from extra calls to network?
                 //Paging data source is getting next page?  check page

@@ -27,7 +27,7 @@ import retrofit2.http.Query
 
 
 interface ArtAPI {
-  @GET("/object?apikey=cd89c670-8570-11e8-afc1-95a6d2776c0b&period=248&worktype=277&size=10")
+  @GET("/object?apikey=cd89c670-8570-11e8-afc1-95a6d2776c0b&period=248&worktype=print&size=10")
   fun japaneseDesign(
       @Query("page") page: String): Call<com.droidteahouse.edo.vo.EdoObjects>
 
