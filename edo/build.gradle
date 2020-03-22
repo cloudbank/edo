@@ -1,0 +1,173 @@
+/*
+ * Copyright (C) 2017 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+apply plugin: 'com.android.application'
+
+apply plugin: 'kotlin-android'
+
+apply plugin: 'kotlin-android-extensions'
+
+apply plugin: 'kotlin-kapt'
+
+
+
+android {
+    compileSdkVersion 28
+    buildToolsVersion '28.0.2'
+    defaultConfig {
+        applicationId "com.droidteahouse.edo"
+        minSdkVersion  14
+        targetSdkVersion 28
+        versionCode 17
+        versionName "1.17"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+        externalNativeBuild {
+            cmake {
+                // flags for the c++ compiler eg "-std=c++14 -frtti -fexceptions"
+                cppFlags "-std=c++14"
+
+                // this causes libc++_shared.so to get packaged into .apk
+                arguments '-DANDROID_STL=c++_shared'
+
+
+            }
+        }
+
+        ndk {
+            // Specifies the ABI configurations of your native
+            // libraries Gradle should build and package with your APK.
+            // need to also have ~ boost binaries built for each abi specified here
+            // abiFilters 'armeabi-v7a', 'x86', 'x86_64', 'arm64-v8a'
+            abiFilters 'armeabi-v7a', 'x86', 'x86_64', 'arm64-v8a'
+        }
+
+    }
+    buildTypes {
+        debug {
+            minifyEnabled false
+            useProguard true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
+                    'proguard-rules.pro'
+            proguardFile 'proguard-rules.pro'
+        }
+        release {
+            minifyEnabled true
+            useProguard true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
+                    'proguard-rules.pro'
+        }
+    }
+    sourceSets {
+        androidTest.java.srcDirs += "src/test-common/java"
+        test.java.srcDirs += "src/test-common/java"
+    }
+    externalNativeBuild {
+        cmake {
+            path 'CMakeLists.txt'
+        }
+    }
+    sourceSets {
+        main {
+            // Android Studio doesn't package precompiled external (*.so) libs into apk, even if linked against via "add_library (... SHARED IMPORTED) in CMakeLists.txt
+            // See eg https://stackoverflow.com/questions/24357687/how-to-include-so-library-in-android-studio/29234765
+            // Hopefully this will be remedied in near future.
+            // As a workaroun in the meantime, need to add them manually to jniLibs.srcDirs
+            // Note: This causes ALL *.so files in ABI (eg "armeabi-v7a") subdir of this dir to get packaged into .apk - relative to "app" dir
+            // If you want to just include those necessary (eh chrono,, system) copy/link them to a separate dir, and reference that dir here instead.
+            jniLibs.srcDirs = [
+                    // should contain any external libs which should be compiled in {armeabi-v7a,arm64-v8a,x86,x86_64,mips} subdirs
+
+                    //, "src/main/JniLibs/boost" // could add additional dirs (with ABI subdirs) to be packaged into apk like this.
+                    // Relative paths like this will be interpreted as relative to "app" dir
+            ]
+        }
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+    productFlavors {
+    }
+}
+
+
+dependencies {
+    implementation deps.constraint_layout
+    implementation deps.support.app_compat
+    implementation deps.support.recyclerview
+    implementation deps.support.cardview
+    implementation deps.support.design
+    implementation deps.room.runtime
+    kapt deps.room.compiler
+    implementation deps.lifecycle.runtime
+    implementation deps.lifecycle.extensions
+    kapt deps.lifecycle.compiler
+    implementation deps.paging
+    implementation deps.kotlin.stdlib
+    implementation deps.retrofit.runtime
+    implementation deps.retrofit.gson
+    //@todo
+    implementation 'com.squareup.okhttp3:okhttp:3.2.0'
+    implementation deps.okhttp_logging_interceptor
+    kapt deps.glide.compiler
+    implementation deps.glide.runtime
+    implementation deps.glide.rv
+    // implementation 'com.squareup.picasso:picasso:2.4.0'
+    // compile 'com.squareup.okhttp3:okhttp:3.2.0'
+    // compile 'com.jakewharton.picasso:picasso2-okhttp3-downloader:1.1.0'
+    implementation deps.dagger.runtime
+    implementation deps.dagger.android
+    implementation deps.dagger.android_support
+    kapt deps.dagger.android_support_compiler
+    kapt deps.dagger.compiler
+    // Android Testing Support Library's runner and rules
+    androidTestImplementation deps.atsl.runner
+    androidTestImplementation deps.atsl.rules
+    androidTestImplementation deps.arch_core.testing
+    testImplementation deps.room.testing
+    androidTestImplementation deps.junit
+    androidTestImplementation deps.retrofit.mock
+    androidTestImplementation deps.arch_core.testing
+    androidTestImplementation deps.dexmaker
+    androidTestImplementation deps.mockito.core, { exclude group: 'net.bytebuddy' }
+    testImplementation deps.junit
+    testImplementation deps.retrofit.mock
+    testImplementation deps.arch_core.testing
+    testImplementation deps.mockito.core
+    testImplementation deps.mockito.kotlin
+    testImplementation deps.mockito.inline
+    testImplementation deps.kotlin.test
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-core:0.26.0'
+    implementation 'io.paperdb:paperdb:2.6'
+
+    // optional - Guava support for Room, including Optional and ListenableFuture
+   // implementation "android.arch.persistence.room:guava:$room_version"
+
+
+
+}
+//------------------------------------------------------------
+def local_props(key) { // reads ~ value from local.properties file
+  Properties properties = new Properties()
+  properties.load(project.rootProject.file('local.properties').newDataInputStream())
+  def val = properties.getProperty(key, null)
+  if (val == null)
+    throw new GradleException("""\
+                cant find value '${key}' in file 'local.properties'.  """)
+
+  return val
+}
