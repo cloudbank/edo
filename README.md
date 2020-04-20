@@ -2,7 +2,7 @@
 <img src="https://i.imgur.com/haEZ4TX.png" height="350"/>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 #
 A demo backend focused app for eliminating duplicate images with Dagger2, Architecture including MVVM, Paging, LiveData, Room, Paging, and a custom dupe detector integrated with the Glide recyclerview preloader written in Kotlin.
-It uses a modified dhash fingerprint algorithm to get matches within epsilon in C++ and coarse grained synnchronization with coroutines in Kotlin.
+It uses a modified dhash fingerprint algorithm to get matches within epsilon in C++ and coarse grained synchronization with coroutines in Kotlin.
 
 * [coroutines] I am able to match colorized images and some variations in resolution within a hamming distance of 3. I also reduced the search for similar images to within +/- 1 of the population count of the hash. I was able to refactor from a critical section and an ExecutorService to Kotlin coroutines and coarse grained synchronization, reducing  dhash times 99%! (3s to .006s)
 
